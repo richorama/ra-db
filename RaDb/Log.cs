@@ -1,7 +1,8 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using System.Threading.Tasks;
+using System.Threading;
 
 namespace RaDb
 {
@@ -9,15 +10,29 @@ namespace RaDb
 
     public class Log : IDisposable
     {
-        FileStream logStream;
-        IDictionary<string,string> cache;
-
+        Stream logStream;
+        ConcurrentDictionary<string, string> cache = new ConcurrentDictionary<string, string>();
         public event LogEntryHandler LogEvent;
+        HashSet<string> deletedKeys = new HashSet<string>();
 
         public Log(string filename)
         {
+            if (null == filename) throw new ArgumentNullException(nameof(filename));
+
             this.logStream = new FileStream(filename, FileMode.OpenOrCreate);
-            cache = new Dictionary<string, string>();
+            LoadCache();
+        }
+
+        public Log(Stream stream)
+        {
+            if (null == stream) throw new ArgumentNullException(nameof(stream));
+
+            this.logStream = stream;
+            LoadCache();
+        }
+
+        void LoadCache()
+        {
             foreach (var entry in this.ReadAll())
             {
                 ApplyToCache(entry);
@@ -29,17 +44,14 @@ namespace RaDb
             switch (entry.Operation)
             {
                 case Operation.Write:
-                    if (cache.ContainsKey(entry.Key))
-                    {
-                        cache[entry.Key] = entry.Value;
-                        return;
-                    }
-                    cache.Add(entry.Key, entry.Value);
-                    return;
+                    cache.AddOrUpdate(entry.Key, x => entry.Value, (z,y) => entry.Value);
+                    deletedKeys.Remove(entry.Key);
+                    break;
                 case Operation.Delete:
-                    if (!cache.ContainsKey(entry.Key)) return;
-                    cache.Remove(entry.Key);
-                    return;
+                    string _ = null;
+                    cache.TryRemove(entry.Key, out _);
+                    deletedKeys.Add(entry.Key);
+                    break;
             }
         }
 
@@ -61,6 +73,8 @@ namespace RaDb
 
         public string Get(string key)
         {
+            if (null == key) throw new ArgumentNullException(nameof(key));
+
             if (cache.ContainsKey(key))
             {
                 return cache[key];
@@ -70,49 +84,46 @@ namespace RaDb
 
         public void Del(string key)
         {
+            if (null == key) throw new ArgumentNullException(nameof(key));
+
             var entry = LogEntry.CreateDelete(key);
             this.Append(entry);
             this.ApplyToCache(entry);
             if (null != this.LogEvent) this.LogEvent(entry);
         }
 
-        public async Task DelAsync(string key)
-        {
-            var entry = LogEntry.CreateDelete(key);
-            await this.AppendAsync(entry);
-            this.ApplyToCache(entry);
-            if (null != this.LogEvent) this.LogEvent(entry);
-        }
+       
 
         public void Set(string key, string value)
         {
+            if (null == key) throw new ArgumentNullException(nameof(key));
+            if (null == value) throw new ArgumentNullException(nameof(value));
+
             var entry = LogEntry.CreateWrite(key, value);
             this.Append(entry);
             ApplyToCache(entry);
             if (null != this.LogEvent) this.LogEvent(entry);
         }
 
-        public async Task SetAsync(string key, string value)
-        {
-            var entry = LogEntry.CreateWrite(key, value);
-            await this.AppendAsync(entry);
-            ApplyToCache(entry);
-            if (null != this.LogEvent) this.LogEvent(entry);
-        }
+      
 
         void Append(LogEntry entry)
         {
             var buffer = GetBuffer(entry);
-            logStream.Write(buffer, 0, buffer.Length);
+            try
+            {
+                Monitor.Enter(logStream);
+                logStream.Write(buffer, 0, buffer.Length);
+            }
+            finally
+            {
+                Monitor.Exit(logStream);
+            }
         }
 
-        Task AppendAsync(LogEntry entry)
-        {
-            var buffer = GetBuffer(entry);
-            return logStream.WriteAsync(buffer, 0, buffer.Length);
-        }
+     
 
-        private static byte[] GetBuffer(LogEntry entry)
+        static byte[] GetBuffer(LogEntry entry)
         {
             var keyBuffer = entry.Key.GetBytes();
             var valueBuffer = entry.Value.GetBytes();
@@ -159,6 +170,7 @@ namespace RaDb
         public void Dispose()
         {
             logStream.Close();
+            logStream.Dispose();
         }
     }
 }

@@ -11,14 +11,14 @@ namespace RaDbTests
     public class BasicTests
     {
         [TestMethod]
-        public async Task BasicWriteTest()
+        public void BasicWriteTest()
         {
             if (File.Exists("test.db")) File.Delete("test.db");
 
             using (var db = new Log("test.db"))
             {
-                await db.SetAsync("foo", "bar");
-                await db.SetAsync("baz", "qux");
+                db.Set("foo", "bar");
+                db.Set("baz", "qux");
 
                 Assert.AreEqual("bar", db.Get("foo"));
                 Assert.AreEqual("qux", db.Get("baz"));
@@ -38,19 +38,19 @@ namespace RaDbTests
         }
 
         [TestMethod]
-        public async Task BasicDeleteTest()
+        public void BasicDeleteTest()
         {
             if (File.Exists("test.db")) File.Delete("test.db");
 
             using (var db = new Log("test.db"))
             {
-                await db.SetAsync("foo", "bar");
+                db.Set("foo", "bar");
                 Assert.AreEqual("bar", db.Get("foo"));
 
-                await db.SetAsync("foo", "baz");
+                db.Set("foo", "baz");
                 Assert.AreEqual("baz", db.Get("foo"));
 
-                await db.DelAsync("foo");
+                db.Del("foo");
 
                 Assert.IsNull(db.Get("foo"));
                 Assert.AreEqual(0, db.Keys.Count());
@@ -68,7 +68,7 @@ namespace RaDbTests
         }
 
         [TestMethod]
-        public async Task LongValuesTest()
+        public void LongValuesTest()
         {
             if (File.Exists("test.db")) File.Delete("test.db");
 
@@ -77,7 +77,7 @@ namespace RaDbTests
 
             using (var db = new Log("test.db"))
             {
-                await db.SetAsync(key, value);
+                db.Set(key, value);
                 Assert.AreEqual(value, db.Get(key));
                 Assert.AreEqual(1, db.Keys.Count());
             }
@@ -92,7 +92,7 @@ namespace RaDbTests
         }
 
         [TestMethod]
-        public async Task EventsTest()
+        public void EventsTest()
         {
             if (File.Exists("test.db")) File.Delete("test.db");
 
@@ -103,7 +103,7 @@ namespace RaDbTests
                 {
                     capturedEvent = x;
                 };
-                await db.SetAsync("foo", "bar");
+                db.Set("foo", "bar");
                 Assert.AreEqual("bar", db.Get("foo"));
                 Assert.IsNotNull(capturedEvent);
                 Assert.AreEqual("foo", capturedEvent.Key);
@@ -111,7 +111,7 @@ namespace RaDbTests
                 Assert.AreEqual(Operation.Write, capturedEvent.Operation);
 
                 capturedEvent = null;
-                await db.DelAsync("foo");
+                db.Del("foo");
                 Assert.IsNotNull(capturedEvent);
                 Assert.AreEqual("foo", capturedEvent.Key);
                 Assert.AreEqual(Operation.Delete, capturedEvent.Operation);
@@ -146,7 +146,52 @@ namespace RaDbTests
             File.Delete("test.db");
         }
 
+        [TestMethod]
+        public void DeleteNonExistantKeys()
+        {
+            if (File.Exists("test.db")) File.Delete("test.db");
 
-       
+            using (var db = new Log("test.db"))
+            {
+                db.Del("foo");
+                db.Del("foo");
+                db.Del("foo");
+            }
+
+            File.Delete("test.db");
+        }
+
+        [TestMethod]
+        public void GetNonExistantKeys()
+        {
+
+            using (var db = new Log(new MemoryStream()))
+            {
+                Assert.IsNull(db.Get("foo"));
+            }
+
+        }
+
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentNullException))]
+        public void NullKey()
+        {
+            using (var db = new Log(new MemoryStream()))
+            {
+                db.Set(null, "value");
+            }
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentNullException))]
+        public void NullValue()
+        {
+            using (var db = new Log(new MemoryStream()))
+            {
+                db.Set("key", null);
+            }
+        }
+
     }
 }
