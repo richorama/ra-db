@@ -4,6 +4,7 @@ using RaDb;
 using System.IO;
 using System.Threading.Tasks;
 using System.Linq;
+using System.Diagnostics;
 
 namespace RaDbTests
 {
@@ -98,7 +99,7 @@ namespace RaDbTests
 
             using (var db = new Log("test.db"))
             {
-                LogEntry capturedEvent = null;
+                LogEntry capturedEvent = new LogEntry();
                 db.LogEvent += x => 
                 {
                     capturedEvent = x;
@@ -110,7 +111,7 @@ namespace RaDbTests
                 Assert.AreEqual("bar", capturedEvent.Value);
                 Assert.AreEqual(Operation.Write, capturedEvent.Operation);
 
-                capturedEvent = null;
+                capturedEvent = new LogEntry();
                 db.Del("foo");
                 Assert.IsNotNull(capturedEvent);
                 Assert.AreEqual("foo", capturedEvent.Key);
@@ -132,12 +133,16 @@ namespace RaDbTests
             var count = 500000;
             var value = Guid.NewGuid().ToString();
 
+            
             using (var db = new Log("test.db"))
             {
+                var sw = Stopwatch.StartNew();
                 foreach (var key in Enumerable.Range(0, count))
                 {
                     db.Set(key.ToString(), value);
                 }
+                sw.Stop();
+                Console.WriteLine(sw.ElapsedMilliseconds);
 
                 Assert.AreEqual(count, db.Keys.Count());
                 Assert.AreNotEqual(0, db.Size);

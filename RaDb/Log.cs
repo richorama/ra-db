@@ -82,38 +82,39 @@ namespace RaDb
             return null;
         }
 
-        public void Del(string key)
+        public void Del(string key, bool requireFlush = false)
         {
             if (null == key) throw new ArgumentNullException(nameof(key));
 
             var entry = LogEntry.CreateDelete(key);
-            this.Append(entry);
+            this.Append(entry, requireFlush);
             this.ApplyToCache(entry);
             if (null != this.LogEvent) this.LogEvent(entry);
         }
 
        
 
-        public void Set(string key, string value)
+        public void Set(string key, string value, bool requireFlush = false)
         {
             if (null == key) throw new ArgumentNullException(nameof(key));
             if (null == value) throw new ArgumentNullException(nameof(value));
 
             var entry = LogEntry.CreateWrite(key, value);
-            this.Append(entry);
+            this.Append(entry, requireFlush);
             ApplyToCache(entry);
             if (null != this.LogEvent) this.LogEvent(entry);
         }
 
       
 
-        void Append(LogEntry entry)
+        void Append(LogEntry entry, bool requireFlush)
         {
             var buffer = GetBuffer(entry);
             try
             {
                 Monitor.Enter(logStream);
                 logStream.Write(buffer, 0, buffer.Length);
+                if (requireFlush) logStream.Flush();
             }
             finally
             {
