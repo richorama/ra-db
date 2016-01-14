@@ -55,6 +55,8 @@ namespace RaDbTests
 
                 Assert.IsNull(db.Get("foo"));
                 Assert.AreEqual(0, db.Keys.Count());
+                Assert.AreEqual(1, db.DeletedKeys.Count());
+                Assert.AreEqual("foo", db.DeletedKeys.First());
 
             }
 

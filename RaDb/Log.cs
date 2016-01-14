@@ -63,6 +63,14 @@ namespace RaDb
             }
         }
 
+        public IEnumerable<string> DeletedKeys
+        {
+            get
+            {
+                return this.deletedKeys;
+            }
+        }
+
         public long Size
         {
             get
