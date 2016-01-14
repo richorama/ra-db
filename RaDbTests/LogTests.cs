@@ -9,7 +9,7 @@ using System.Diagnostics;
 namespace RaDbTests
 {
     [TestClass]
-    public class BasicTests
+    public class LogTests
     {
         [TestMethod]
         public void BasicWriteTest()
@@ -38,6 +38,7 @@ namespace RaDbTests
 
         }
 
+   
         [TestMethod]
         public void BasicDeleteTest()
         {
@@ -200,5 +201,33 @@ namespace RaDbTests
             }
         }
 
+
+        [TestMethod]
+        public void TestClearLog()
+        {
+            if (File.Exists("test.db")) File.Delete("test.db");
+
+            using (var db = new Log("test.db"))
+            {
+                db.Set("foo", "bar");
+                db.Set("baz", "qux");
+                db.Del("foo");
+                db.Clear();
+
+                Assert.AreEqual(0, db.DeletedKeys.Count());
+                Assert.AreEqual(0, db.Keys.Count());
+                Assert.IsNull(db.Get("baz"));
+            }
+
+            using (var db = new Log("test.db"))
+            {
+                Assert.AreEqual(0, db.DeletedKeys.Count());
+                Assert.AreEqual(0, db.Keys.Count());
+                Assert.IsNull(db.Get("baz"));
+            }
+
+            File.Delete("test.db");
+
+        }
     }
 }

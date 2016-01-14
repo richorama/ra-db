@@ -31,9 +31,18 @@ namespace RaDb
             LoadCache();
         }
 
+        public void Clear()
+        {
+            this.logStream.Position = 0;
+            this.logStream.SetLength(0);
+            this.logStream.Flush();
+            this.cache.Clear();
+            this.deletedKeys.Clear();
+        }
+
         void LoadCache()
         {
-            foreach (var entry in this.ReadAll())
+            foreach (var entry in this.logStream.ReadAll())
             {
                 ApplyToCache(entry);
             }
@@ -90,6 +99,24 @@ namespace RaDb
             return null;
         }
 
+
+        public DeletedResult GetValueOrDeleted(string key)
+        {
+            if (null == key) throw new ArgumentNullException(nameof(key));
+
+            if (cache.ContainsKey(key))
+            {
+                return DeletedResult.FromValue(cache[key]);
+            }
+
+            if (deletedKeys.Contains(key))
+            {
+                return DeletedResult.FromDelete();
+            }
+
+            return null;
+        }
+
         public void Del(string key, bool requireFlush = false)
         {
             if (null == key) throw new ArgumentNullException(nameof(key));
@@ -117,7 +144,7 @@ namespace RaDb
 
         void Append(LogEntry entry, bool requireFlush)
         {
-            var buffer = GetBuffer(entry);
+            var buffer = entry.GetBuffer();
             try
             {
                 Monitor.Enter(logStream);
@@ -130,55 +157,9 @@ namespace RaDb
             }
         }
 
-     
-
-        static byte[] GetBuffer(LogEntry entry)
-        {
-            var keyBuffer = entry.Key.GetBytes();
-            var valueBuffer = entry.Value.GetBytes();
-
-            var buffer = new byte[keyBuffer.Length + valueBuffer.Length + 4 + 4 + 1];
-            var index = 0;
-            var append = new Action<byte[]>(bytes =>
-            {
-                Buffer.BlockCopy(bytes, 0, buffer, index, bytes.Length);
-                index += bytes.Length;
-            });
-
-            append(BitConverter.GetBytes(keyBuffer.Length));
-            append(BitConverter.GetBytes(valueBuffer.Length));
-            append(new byte[] { (byte)entry.Operation });
-            append(keyBuffer);
-            append(valueBuffer);
-            return buffer;
-        }
-
-
-        IEnumerable<LogEntry> ReadAll()
-        {
-            logStream.Position = 0;
-            while (logStream.Position < logStream.Length)
-            {
-                yield return ReadEntry();
-            }
-        }
-
-        LogEntry ReadEntry()
-        {
-            var keySize = logStream.ReadInt();
-            var valueSize = logStream.ReadInt();
-            var operation = (Operation) logStream.ReadByte();
-            return new LogEntry
-            {
-                Key = logStream.ReadString(keySize),
-                Value = logStream.ReadString(valueSize),
-                Operation = operation
-            };
-        }
 
         public void Dispose()
         {
-            logStream.Close();
             logStream.Dispose();
         }
     }

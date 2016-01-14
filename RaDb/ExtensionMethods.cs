@@ -39,5 +39,49 @@ namespace RaDb
             stream.Read(buffer, 0, length);
             return buffer.GetString();
         }
+
+        public static byte[] GetBuffer(this LogEntry entry)
+        {
+            var keyBuffer = entry.Key.GetBytes();
+            var valueBuffer = entry.Value.GetBytes();
+
+            var buffer = new byte[keyBuffer.Length + valueBuffer.Length + 4 + 4 + 1];
+            var index = 0;
+            var append = new Action<byte[]>(bytes =>
+            {
+                Buffer.BlockCopy(bytes, 0, buffer, index, bytes.Length);
+                index += bytes.Length;
+            });
+
+            append(BitConverter.GetBytes(keyBuffer.Length));
+            append(BitConverter.GetBytes(valueBuffer.Length));
+            append(new byte[] { (byte)entry.Operation });
+            append(keyBuffer);
+            append(valueBuffer);
+            return buffer;
+        }
+
+        public static LogEntry ReadEntry(this Stream stream)
+        {
+            var keySize = stream.ReadInt();
+            var valueSize = stream.ReadInt();
+            var operation = (Operation)stream.ReadByte();
+            return new LogEntry
+            {
+                Key = stream.ReadString(keySize),
+                Value = stream.ReadString(valueSize),
+                Operation = operation
+            };
+        }
+
+        public static IEnumerable<LogEntry> ReadAll(this Stream stream)
+        {
+            stream.Position = 0;
+            while (stream.Position < stream.Length)
+            {
+                yield return stream.ReadEntry();
+            }
+        }
+
     }
 }
