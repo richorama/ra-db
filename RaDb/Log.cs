@@ -9,6 +9,10 @@ namespace RaDb
 {
     public delegate void LogEntryHandler(LogEntry logEvent);
 
+
+    /// <summary>
+    /// The log of database operations
+    /// </summary>
     public class Log : IDisposable
     {
         Stream logStream;
@@ -140,7 +144,7 @@ namespace RaDb
             }
         }
 
-        void Append(LogEntry entry, bool requireFlush)
+        public void Append(LogEntry entry, bool requireFlush)
         {
             var buffer = entry.GetBuffer();
             try

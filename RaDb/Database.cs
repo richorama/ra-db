@@ -11,6 +11,7 @@ namespace RaDb
     public class Database : IDisposable
     {
         const int MAX_LOG_SIZE = 4 * 1024 * 1024; // 4MB
+        const int MAX_LEVELS = 4;
 
         public DirectoryInfo DbDirectory { get; private set; }
 
@@ -18,6 +19,8 @@ namespace RaDb
 
         public Database(string path)
         {
+            if (null == path) throw new ArgumentNullException(nameof(path));
+
             this.DbDirectory = Directory.CreateDirectory(path);
             this.Levels = new List<Level>();
 
@@ -80,18 +83,44 @@ namespace RaDb
             }
         }
 
+        string NextLevelName()
+        {
+            var path = Path.Combine(this.DbDirectory.FullName, $"{this.CurrentLevelNumber.ToString("D4")}.level");
+            this.CurrentLevelNumber++;
+            return path;
+        }
+
+
         void LevelUp()
         {
             try
             {
+                // TODO: Figure out if some of this could be done in a background task?
+
                 Monitor.Enter(this.ActiveLog);
                 if (this.ActiveLog.Size <= MAX_LOG_SIZE) return;
                
-                var stream = new FileStream(Path.Combine(this.DbDirectory.FullName, $"{this.CurrentLevelNumber.ToString("D4")}.level"), FileMode.CreateNew);
-                this.CurrentLevelNumber++;
-                var level = Level.Build(this.ActiveLog, stream);
+                var filename = this.NextLevelName();
+                var level = Level.Build(this.ActiveLog, filename);
                 this.Levels.Add(level);
                 this.ActiveLog.Clear();
+
+                if (this.Levels.Count > MAX_LEVELS)
+                {
+                    // we've hit the max numer of levels, so consolidate down to a single level
+                    // compactions are extremely experimental!!!
+                    var compactedFilename = this.NextLevelName();
+                    var newLevel = Level.Compaction(this.Levels, compactedFilename);
+                    var oldLevels = this.Levels.ToArray();
+                    this.Levels.Clear();
+                    this.Levels.Add(newLevel);
+                    foreach (var oldLevel in oldLevels)
+                    {
+                        oldLevel.Dispose();
+                        File.Delete(oldLevel.Filename);
+                    }
+                }
+
             }
             finally
             {
@@ -102,6 +131,9 @@ namespace RaDb
 
         public IEnumerable<KeyValue> Search(string fromKey, string toKey)
         {
+            if (null == fromKey) throw new ArgumentNullException(nameof(fromKey));
+            if (null == toKey) throw new ArgumentNullException(nameof(toKey));
+
             var results = new Dictionary<string, string>();
             foreach (var level in this.Levels)
             {

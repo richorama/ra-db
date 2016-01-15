@@ -7,21 +7,32 @@ using System.Threading.Tasks;
 
 namespace RaDb
 {
+    /// <summary>
+    /// Levels are immutable snapshots of the database.
+    /// There can be multiple levels, higher levels override lower levels
+    /// Levels can contain deletes
+    /// Levels should contain only one instance of a key
+    /// Caching, and key bounds could be added to improve read performance
+    /// </summary>
     public class Level : IDisposable
     {
         Stream levelStream;
         BloomFilter<string> filter;
 
+        public string Filename { get; private set; }
+
         public Level(string filename)
         {
             if (null == filename) throw new ArgumentNullException(nameof(filename));
+            this.Filename = filename;
             this.levelStream = new FileStream(filename, FileMode.OpenOrCreate);
             InitBloomFilter();
         }
 
-        public Level(Stream stream)
+        public Level(Stream stream, string filename)
         {
             if (null == stream) throw new ArgumentNullException(nameof(stream));
+            this.Filename = filename;
             this.levelStream = stream;
             InitBloomFilter();
         }
@@ -35,15 +46,39 @@ namespace RaDb
             }
         }
 
-        public static Level Build(Log log, Stream stream)
+        public static Level Build(Log log, string filename)
         {
+            var stream = new FileStream(filename, FileMode.OpenOrCreate);
             stream.Position = 0;
             foreach (var logEntry in StreamLogEntry(log).OrderBy(x => x.Key))
             {
                 var buffer = logEntry.GetBuffer();
                 stream.Write(buffer, 0, buffer.Length);
             }
-            return new Level(stream);
+            return new Level(stream, filename);
+        }
+
+        public static Level Compaction(IEnumerable<Level> levels, string filename)
+        {
+            var dictionary = new Dictionary<string, string>();
+
+            foreach (var level in levels)
+            {
+                foreach (var item in level.Scan())
+                {
+                    dictionary.ApplyOperation(item);
+                }
+            }
+
+            var stream = new FileStream(filename, FileMode.OpenOrCreate);
+            stream.Position = 0;
+            foreach (var item in dictionary.OrderBy(x => x.Key).Select(x => LogEntry.CreateWrite(x.Key, x.Value)))
+            {
+                var buffer = item.GetBuffer();
+                stream.Write(buffer, 0, buffer.Length);
+            }
+            return new Level(stream, filename);
+
         }
 
         static IEnumerable<LogEntry> StreamLogEntry(Log log)

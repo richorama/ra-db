@@ -14,9 +14,9 @@ namespace RaDbTests
         [TestMethod]
         public void BasicWriteTest()
         {
-            if (File.Exists("test.db")) File.Delete("test.db");
+            if (File.Exists("test.log")) File.Delete("test.log");
 
-            using (var db = new Log("test.db"))
+            using (var db = new Log("test.log"))
             {
                 db.Set("foo", "bar");
                 db.Set("baz", "qux");
@@ -28,13 +28,13 @@ namespace RaDbTests
                 Assert.IsTrue(db.Keys.Contains("baz"));
             }
 
-            using (var db = new Log("test.db"))
+            using (var db = new Log("test.log"))
             {
                 Assert.AreEqual("bar", db.GetValueOrDeleted("foo").Value);
                 Assert.AreEqual("qux", db.GetValueOrDeleted("baz").Value);
             }
 
-            File.Delete("test.db");
+            File.Delete("test.log");
 
         }
 
@@ -42,9 +42,9 @@ namespace RaDbTests
         [TestMethod]
         public void BasicDeleteTest()
         {
-            if (File.Exists("test.db")) File.Delete("test.db");
+            if (File.Exists("test.log")) File.Delete("test.log");
 
-            using (var db = new Log("test.db"))
+            using (var db = new Log("test.log"))
             {
                 db.Set("foo", "bar");
                 Assert.AreEqual("bar", db.GetValueOrDeleted("foo").Value);
@@ -61,46 +61,46 @@ namespace RaDbTests
 
             }
 
-            using (var db = new Log("test.db"))
+            using (var db = new Log("test.log"))
             {
                 Assert.AreEqual(0, db.Keys.Count());
                 Assert.IsTrue(db.GetValueOrDeleted("foo").IsDeleted);
             }
 
-            File.Delete("test.db");
+            File.Delete("test.log");
 
         }
 
         [TestMethod]
         public void LongValuesTest()
         {
-            if (File.Exists("test.db")) File.Delete("test.db");
+            if (File.Exists("test.log")) File.Delete("test.log");
 
             var key = new string('k', 5000);
             var value = new string('v', 5000);
 
-            using (var db = new Log("test.db"))
+            using (var db = new Log("test.log"))
             {
                 db.Set(key, value);
                 Assert.AreEqual(value, db.GetValueOrDeleted(key).Value);
                 Assert.AreEqual(1, db.Keys.Count());
             }
 
-            using (var db = new Log("test.db"))
+            using (var db = new Log("test.log"))
             {
                 Assert.AreEqual(value, db.GetValueOrDeleted(key).Value);
                 Assert.AreEqual(1, db.Keys.Count());
             }
 
-            File.Delete("test.db");
+            File.Delete("test.log");
         }
 
         [TestMethod]
         public void EventsTest()
         {
-            if (File.Exists("test.db")) File.Delete("test.db");
+            if (File.Exists("test.log")) File.Delete("test.log");
 
-            using (var db = new Log("test.db"))
+            using (var db = new Log("test.log"))
             {
                 LogEntry capturedEvent = new LogEntry();
                 db.LogEvent += x => 
@@ -121,14 +121,14 @@ namespace RaDbTests
                 Assert.AreEqual(Operation.Delete, capturedEvent.Operation);
             }
 
-            File.Delete("test.db");
+            File.Delete("test.log");
 
         }
 
         [TestMethod]
         public void LotsOfWrites()
         {
-            if (File.Exists("test.db")) File.Delete("test.db");
+            if (File.Exists("test.log")) File.Delete("test.log");
             
             // I'm benchmarking ~500,000 writes per second
             // which is ~25MB on disk
@@ -137,7 +137,7 @@ namespace RaDbTests
             var value = Guid.NewGuid().ToString();
 
             
-            using (var db = new Log("test.db"))
+            using (var db = new Log("test.log"))
             {
                 var sw = Stopwatch.StartNew();
                 foreach (var key in Enumerable.Range(0, count))
@@ -151,22 +151,22 @@ namespace RaDbTests
                 Assert.AreNotEqual(0, db.Size);
             }
 
-            File.Delete("test.db");
+            File.Delete("test.log");
         }
 
         [TestMethod]
         public void DeleteNonExistantKeys()
         {
-            if (File.Exists("test.db")) File.Delete("test.db");
+            if (File.Exists("test.log")) File.Delete("test.log");
 
-            using (var db = new Log("test.db"))
+            using (var db = new Log("test.log"))
             {
                 db.Del("foo");
                 db.Del("foo");
                 db.Del("foo");
             }
 
-            File.Delete("test.db");
+            File.Delete("test.log");
         }
 
         [TestMethod]
@@ -205,9 +205,9 @@ namespace RaDbTests
         [TestMethod]
         public void TestClearLog()
         {
-            if (File.Exists("test.db")) File.Delete("test.db");
+            if (File.Exists("test.log")) File.Delete("test.log");
 
-            using (var db = new Log("test.db"))
+            using (var db = new Log("test.log"))
             {
                 db.Set("foo", "bar");
                 db.Set("baz", "qux");
@@ -219,14 +219,14 @@ namespace RaDbTests
                 Assert.IsNull(db.GetValueOrDeleted("baz"));
             }
 
-            using (var db = new Log("test.db"))
+            using (var db = new Log("test.log"))
             {
                 Assert.AreEqual(0, db.DeletedKeys.Count());
                 Assert.AreEqual(0, db.Keys.Count());
                 Assert.IsNull(db.GetValueOrDeleted("baz"));
             }
 
-            File.Delete("test.db");
+            File.Delete("test.log");
 
         }
     }
