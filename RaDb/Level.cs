@@ -65,6 +65,40 @@ namespace RaDb
             return this.levelStream.ReadAll();
         }
 
+        public IEnumerable<LogEntry> Scan(string from, string to)
+        {
+            this.levelStream.Position = 0;
+            while (this.levelStream.Position < this.levelStream.Length)
+            {
+                // read header information 
+                var keySize = this.levelStream.ReadInt();
+                var valueSize = this.levelStream.ReadInt();
+                var operation = (Operation)this.levelStream.ReadByte();
+                var readKey = this.levelStream.ReadString(keySize);
+
+                if (string.Compare(readKey, from) < 0)
+                {
+                    // not hit the key range yet
+                    this.levelStream.Position += valueSize;
+                    continue;
+                }
+
+                if(string.Compare(readKey, to) >= 0)
+                {
+                    // gone past the key range
+                    yield break;
+                }
+
+                // within the key range
+                yield return new LogEntry
+                {
+                    Key = readKey,
+                    Value = this.levelStream.ReadString(valueSize),
+                    Operation = operation
+                };
+            }
+        }
+
         IEnumerable<string> StreamAllKeys()
         {
             this.levelStream.Position = 0;

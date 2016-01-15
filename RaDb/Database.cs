@@ -10,7 +10,7 @@ namespace RaDb
 {
     public class Database : IDisposable
     {
-        const int MAX_LOG_SIZE = 1000000;
+        const int MAX_LOG_SIZE = 4 * 1024 * 1024; // 4MB
 
         public DirectoryInfo DbDirectory { get; private set; }
 
@@ -71,6 +71,15 @@ namespace RaDb
             }
         }
 
+        public void Del(string key, bool requireDiskWrite = false)
+        {
+            this.ActiveLog.Del(key, requireDiskWrite);
+            if (this.ActiveLog.Size > MAX_LOG_SIZE)
+            {
+                this.LevelUp();
+            }
+        }
+
         void LevelUp()
         {
             try
@@ -88,6 +97,26 @@ namespace RaDb
             {
                 Monitor.Exit(this.ActiveLog);
             }
+        }
+
+
+        public IEnumerable<KeyValue> Search(string fromKey, string toKey)
+        {
+            var results = new Dictionary<string, string>();
+            foreach (var level in this.Levels)
+            {
+                foreach (var item in level.Scan(fromKey, toKey))
+                {
+                    results.ApplyOperation(item);
+                }
+            }
+
+            foreach (var item in this.ActiveLog.Scan(fromKey, toKey))
+            {
+                results.ApplyOperation(item);
+            }
+
+            return results.Select(x => new KeyValue { Key = x.Key, Value = x.Value }).OrderBy(x => x.Key);
         }
 
         public void Dispose()

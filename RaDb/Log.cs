@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 
 namespace RaDb
@@ -124,6 +125,19 @@ namespace RaDb
             this.Append(entry, requireFlush);
             ApplyToCache(entry);
             if (null != this.LogEvent) this.LogEvent(entry);
+        }
+
+        internal IEnumerable<LogEntry> Scan(string fromKey, string toKey)
+        {
+            foreach (var key in this.deletedKeys.Where(x => string.Compare(x, fromKey) >= 0).Where(x => string.Compare(x, toKey) < 0))
+            {
+                yield return LogEntry.CreateDelete(key);
+            }
+
+            foreach (var entry in this.cache.Where(x => string.Compare(x.Key, fromKey) >= 0).Where(x => string.Compare(x.Key, toKey) < 0))
+            {
+                yield return LogEntry.CreateWrite(entry.Key, entry.Value);
+            }
         }
 
         void Append(LogEntry entry, bool requireFlush)

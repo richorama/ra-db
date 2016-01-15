@@ -43,6 +43,7 @@
     <Compile Include="BloomFilter.cs" />
     <Compile Include="Database.cs" />
     <Compile Include="ExtensionMethods.cs" />
+    <Compile Include="KeyValue.cs" />
     <Compile Include="Level.cs" />
     <Compile Include="Log.cs" />
     <Compile Include="LogEntry.cs" />

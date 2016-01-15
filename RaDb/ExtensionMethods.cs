@@ -83,5 +83,29 @@ namespace RaDb
             }
         }
 
+        public static void ApplyOperation(this IDictionary<string, string> dictionary, LogEntry value)
+        {
+            switch (value.Operation)
+            {
+                case Operation.Write:
+                    if (dictionary.ContainsKey(value.Key))
+                    {
+                        dictionary[value.Key] = value.Value;
+                    }
+                    else
+                    {
+                        dictionary.Add(value.Key, value.Value);
+                    }
+                    break;
+                case Operation.Delete:
+                    if (dictionary.ContainsKey(value.Key))
+                    {
+                        dictionary.Remove(value.Key);
+                    }
+                    break;
+            }
+
+        }
+
     }
 }
