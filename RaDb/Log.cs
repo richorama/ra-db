@@ -88,30 +88,18 @@ namespace RaDb
             }
         }
 
-        public string Get(string key)
+        public DeletableValue GetValueOrDeleted(string key)
         {
             if (null == key) throw new ArgumentNullException(nameof(key));
 
             if (cache.ContainsKey(key))
             {
-                return cache[key];
-            }
-            return null;
-        }
-
-
-        public DeletedResult GetValueOrDeleted(string key)
-        {
-            if (null == key) throw new ArgumentNullException(nameof(key));
-
-            if (cache.ContainsKey(key))
-            {
-                return DeletedResult.FromValue(cache[key]);
+                return DeletableValue.FromValue(cache[key]);
             }
 
             if (deletedKeys.Contains(key))
             {
-                return DeletedResult.FromDelete();
+                return DeletableValue.FromDelete();
             }
 
             return null;
@@ -127,8 +115,6 @@ namespace RaDb
             if (null != this.LogEvent) this.LogEvent(entry);
         }
 
-       
-
         public void Set(string key, string value, bool requireFlush = false)
         {
             if (null == key) throw new ArgumentNullException(nameof(key));
@@ -139,8 +125,6 @@ namespace RaDb
             ApplyToCache(entry);
             if (null != this.LogEvent) this.LogEvent(entry);
         }
-
-      
 
         void Append(LogEntry entry, bool requireFlush)
         {

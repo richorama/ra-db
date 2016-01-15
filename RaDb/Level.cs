@@ -55,7 +55,7 @@ namespace RaDb
 
             foreach (var key in log.Keys)
             {
-                var value = log.Get(key);
+                var value = log.GetValueOrDeleted(key).Value;
                 yield return LogEntry.CreateWrite(key, value);
             }
         }
@@ -109,26 +109,15 @@ namespace RaDb
             }
             return null;
         }
-
-        
-        public string Get(string key)
+      
+        public DeletableValue GetValueOrDeleted(string key)
         {
             if (!this.filter.Contains(key)) return null;
 
             var value = this.Find(key);
             if (value == null) return null;
-            if (value.Operation == Operation.Delete) return null;
-            return value.Value;
-        }
-
-        public DeletedResult GetValueOrDeleted(string key)
-        {
-            if (!this.filter.Contains(key)) return null;
-
-            var value = this.Find(key);
-            if (value == null) return null;
-            if (value.Operation == Operation.Delete) return DeletedResult.FromDelete();
-            return DeletedResult.FromValue(value.Value);
+            if (value.Operation == Operation.Delete) return DeletableValue.FromDelete();
+            return DeletableValue.FromValue(value.Value);
         }
 
         public void Dispose()

@@ -6,21 +6,21 @@ using System.Threading.Tasks;
 
 namespace RaDb
 {
-    public class DeletedResult
+    public class DeletableValue
     {
 
-        public static DeletedResult FromValue(string value)
+        public static DeletableValue FromValue(string value)
         {
-            return new DeletedResult
+            return new DeletableValue
             {
                 IsDeleted = false,
                 Value = value
             };
         }
 
-        public static DeletedResult FromDelete()
+        public static DeletableValue FromDelete()
         {
-            return new DeletedResult
+            return new DeletableValue
             {
                 IsDeleted = true,
                 Value = null

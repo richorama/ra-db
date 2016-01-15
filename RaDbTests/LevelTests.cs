@@ -25,10 +25,10 @@ namespace RaDbTests
 
                 using (var level = Level.Build(log, new MemoryStream()))
                 {
-                    Assert.AreEqual("value100", level.Get("key100"));
-                    Assert.AreEqual("value999", level.Get("key999"));
-                    Assert.IsNull(level.Get("random key name"));
-                    Assert.IsNull(level.Get("key88"));
+                    Assert.AreEqual("value100", level.GetValueOrDeleted("key100").Value);
+                    Assert.AreEqual("value999", level.GetValueOrDeleted("key999").Value);
+                    Assert.IsNull(level.GetValueOrDeleted("random key name"));
+                    Assert.IsTrue(level.GetValueOrDeleted("key88").IsDeleted);
                 }
             }
         }

@@ -21,8 +21,8 @@ namespace RaDbTests
                 db.Set("foo", "bar");
                 db.Set("baz", "qux");
 
-                Assert.AreEqual("bar", db.Get("foo"));
-                Assert.AreEqual("qux", db.Get("baz"));
+                Assert.AreEqual("bar", db.GetValueOrDeleted("foo").Value);
+                Assert.AreEqual("qux", db.GetValueOrDeleted("baz").Value);
                 Assert.AreEqual(2, db.Keys.Count());
                 Assert.IsTrue(db.Keys.Contains("foo"));
                 Assert.IsTrue(db.Keys.Contains("baz"));
@@ -30,8 +30,8 @@ namespace RaDbTests
 
             using (var db = new Log("test.db"))
             {
-                Assert.AreEqual("bar", db.Get("foo"));
-                Assert.AreEqual("qux", db.Get("baz"));
+                Assert.AreEqual("bar", db.GetValueOrDeleted("foo").Value);
+                Assert.AreEqual("qux", db.GetValueOrDeleted("baz").Value);
             }
 
             File.Delete("test.db");
@@ -47,14 +47,14 @@ namespace RaDbTests
             using (var db = new Log("test.db"))
             {
                 db.Set("foo", "bar");
-                Assert.AreEqual("bar", db.Get("foo"));
+                Assert.AreEqual("bar", db.GetValueOrDeleted("foo").Value);
 
                 db.Set("foo", "baz");
-                Assert.AreEqual("baz", db.Get("foo"));
+                Assert.AreEqual("baz", db.GetValueOrDeleted("foo").Value);
 
                 db.Del("foo");
 
-                Assert.IsNull(db.Get("foo"));
+                Assert.IsTrue(db.GetValueOrDeleted("foo").IsDeleted);
                 Assert.AreEqual(0, db.Keys.Count());
                 Assert.AreEqual(1, db.DeletedKeys.Count());
                 Assert.AreEqual("foo", db.DeletedKeys.First());
@@ -64,7 +64,7 @@ namespace RaDbTests
             using (var db = new Log("test.db"))
             {
                 Assert.AreEqual(0, db.Keys.Count());
-                Assert.IsNull(db.Get("foo"));
+                Assert.IsTrue(db.GetValueOrDeleted("foo").IsDeleted);
             }
 
             File.Delete("test.db");
@@ -82,13 +82,13 @@ namespace RaDbTests
             using (var db = new Log("test.db"))
             {
                 db.Set(key, value);
-                Assert.AreEqual(value, db.Get(key));
+                Assert.AreEqual(value, db.GetValueOrDeleted(key).Value);
                 Assert.AreEqual(1, db.Keys.Count());
             }
 
             using (var db = new Log("test.db"))
             {
-                Assert.AreEqual(value, db.Get(key));
+                Assert.AreEqual(value, db.GetValueOrDeleted(key).Value);
                 Assert.AreEqual(1, db.Keys.Count());
             }
 
@@ -108,7 +108,7 @@ namespace RaDbTests
                     capturedEvent = x;
                 };
                 db.Set("foo", "bar");
-                Assert.AreEqual("bar", db.Get("foo"));
+                Assert.AreEqual("bar", db.GetValueOrDeleted("foo").Value);
                 Assert.IsNotNull(capturedEvent);
                 Assert.AreEqual("foo", capturedEvent.Key);
                 Assert.AreEqual("bar", capturedEvent.Value);
@@ -175,7 +175,7 @@ namespace RaDbTests
 
             using (var db = new Log(new MemoryStream()))
             {
-                Assert.IsNull(db.Get("foo"));
+                Assert.IsNull(db.GetValueOrDeleted("foo"));
             }
 
         }
@@ -216,14 +216,14 @@ namespace RaDbTests
 
                 Assert.AreEqual(0, db.DeletedKeys.Count());
                 Assert.AreEqual(0, db.Keys.Count());
-                Assert.IsNull(db.Get("baz"));
+                Assert.IsNull(db.GetValueOrDeleted("baz"));
             }
 
             using (var db = new Log("test.db"))
             {
                 Assert.AreEqual(0, db.DeletedKeys.Count());
                 Assert.AreEqual(0, db.Keys.Count());
-                Assert.IsNull(db.Get("baz"));
+                Assert.IsNull(db.GetValueOrDeleted("baz"));
             }
 
             File.Delete("test.db");

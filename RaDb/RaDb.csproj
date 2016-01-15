@@ -46,7 +46,7 @@
     <Compile Include="Level.cs" />
     <Compile Include="Log.cs" />
     <Compile Include="LogEntry.cs" />
-    <Compile Include="NullableValue.cs" />
+    <Compile Include="DeletableValue.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
