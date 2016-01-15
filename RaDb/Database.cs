@@ -37,6 +37,10 @@ namespace RaDb
                         break;
                 }
             }
+
+            // add one to the level number, so we're ready to create the next level.
+            this.CurrentLevelNumber++;
+
             if (null == this.ActiveLog)
             {
                 this.ActiveLog = new Log(Path.Combine(this.DbDirectory.FullName, "database.log"));
