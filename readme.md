@@ -6,7 +6,7 @@ __DO NOT USE__
 
 ## Usage
 
-```cs#
+```c#
 
 using (var db = new Database("."))
 {
