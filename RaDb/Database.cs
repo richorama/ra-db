@@ -68,7 +68,6 @@ namespace RaDb
             if (this.ActiveLog.Size > MAX_LOG_SIZE)
             {
                 this.LevelUp();
-                this.LevelUp();
             }
         }
 
