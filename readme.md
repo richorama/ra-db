@@ -4,6 +4,32 @@ An experiment in .NET databases inspired by LevelDB.
 
 __DO NOT USE__
 
+## Usage
+
+```cs#
+
+using (var db = new Database("."))
+{
+	// write values
+	db.Set("key1", "value1");
+	db.Set("key2", "value2");
+
+	// get values
+	db.Get("key2"); // "value2"
+
+	// delete values
+	db.Del("key1");
+
+	// search within a key range
+	var results = db.Search("from_this_key", "to_this_key");
+	foreach (var item in results)
+	{
+		Console.WriteLine($"{item.Key} = {item.Value}");
+	}
+}
+
+```
+
 ## Todo
 
 * Think about isolation during search and compaction
