@@ -131,6 +131,19 @@ namespace RaDb
             if (null != this.LogEvent) this.LogEvent(entry);
         }
 
+        public void Set(IEnumerable<KeyValue<T>> records, bool requireFlush = false)
+        {
+            if (null == records) throw new ArgumentNullException(nameof(records));
+
+            var entries = records.Select(x => LogEntry<T>.CreateWrite(x.Key, x.Value)).ToArray();
+            this.Append(entries, requireFlush);
+            foreach (var entry in entries)
+            {
+                ApplyToCache(entry);
+                if (null != this.LogEvent) this.LogEvent(entry);
+            }
+        }
+
         internal IEnumerable<LogEntry<T>> Scan(string fromKey, string toKey)
         {
             foreach (var key in this.deletedKeys.Where(x => string.Compare(x, fromKey) >= 0).Where(x => string.Compare(x, toKey) < 0))
@@ -147,6 +160,21 @@ namespace RaDb
         public void Append(LogEntry<T> entry, bool requireFlush)
         {
             var buffer = entry.GetBuffer();
+            try
+            {
+                Monitor.Enter(logStream);
+                logStream.Write(buffer, 0, buffer.Length);
+                if (requireFlush) logStream.Flush();
+            }
+            finally
+            {
+                Monitor.Exit(logStream);
+            }
+        }
+
+        public void Append(IEnumerable<LogEntry<T>> entries, bool requireFlush)
+        {
+            var buffer = entries.GetBuffer();
             try
             {
                 Monitor.Enter(logStream);

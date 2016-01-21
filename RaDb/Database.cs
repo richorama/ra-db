@@ -78,6 +78,16 @@ namespace RaDb
             }
         }
 
+        public void Set(IEnumerable<KeyValue<T>> values, bool requireDiskWrite = false)
+        {
+            this.ActiveLog.Set(values, requireDiskWrite);
+            if (this.ActiveLog.Size > MAX_LOG_SIZE)
+            {
+                this.LevelUp();
+            }
+        }
+
+
         public void Del(string key, bool requireDiskWrite = false)
         {
             this.ActiveLog.Del(key, requireDiskWrite);

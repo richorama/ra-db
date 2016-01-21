@@ -130,6 +130,35 @@ namespace RaDbTests
             if (Directory.Exists("testdb")) Directory.Delete("testdb", true);
         }
 
+        [TestMethod]
+        public void MultiWrite()
+        {
+            if (Directory.Exists("testdb")) Directory.Delete("testdb", true);
+
+            using (var db = new Database<int>("testdb"))
+            {
+                var records = new KeyValue<int>[] {
+                    new KeyValue<int>("one",1),
+                    new KeyValue<int>("two",2),
+                    new KeyValue<int>("three",3)
+                };
+
+                db.Set(records);
+
+                Assert.AreEqual(1, db.Get("one"));
+                Assert.AreEqual(2, db.Get("two"));
+                Assert.AreEqual(3, db.Get("three"));
+            }
+            using (var db = new Database<int>("testdb"))
+            {
+                Assert.AreEqual(1, db.Get("one"));
+                Assert.AreEqual(2, db.Get("two"));
+                Assert.AreEqual(3, db.Get("three"));
+            }
+
+            if (Directory.Exists("testdb")) Directory.Delete("testdb", true);
+        }
+
 
     }
 

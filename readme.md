@@ -8,7 +8,7 @@ __DO NOT USE__
 
 ```c#
 
-using (var db = new Database("."))
+using (var db = new Database<string>("."))
 {
 	// write values
 	db.Set("key1", "value1");
