@@ -7,20 +7,20 @@ using System.Linq;
 namespace RaDbTests
 {
     [TestClass]
-    public class DatabaseTests 
+    public class DatabaseTests
     {
         [TestMethod]
         public void SimpleDatabaseTest()
         {
             if (Directory.Exists("testdb")) Directory.Delete("testdb", true);
 
-            using (var db = new Database("testdb"))
+            using (var db = new Database<string>("testdb"))
             {
                 db.Set("foo", "bar");
                 Assert.AreEqual("bar", db.Get("foo"));
             }
 
-            using (var db = new Database("testdb"))
+            using (var db = new Database<string>("testdb"))
             {
                 Assert.AreEqual("bar", db.Get("foo"));
             }
@@ -34,7 +34,7 @@ namespace RaDbTests
         {
             if (Directory.Exists("testdb")) Directory.Delete("testdb", true);
 
-            using (var db = new Database("testdb"))
+            using (var db = new Database<string>("testdb"))
             {
                 for (var i = 0; i < 100000; i++)
                 {
@@ -47,7 +47,7 @@ namespace RaDbTests
                 Console.WriteLine($"levels : {db.CurrentLevelNumber}");
             }
 
-            using (var db = new Database("testdb"))
+            using (var db = new Database<string>("testdb"))
             {
                 Assert.IsNotNull(db.Get("5000"));
                 Assert.IsNull(db.Get("xxxx"));
@@ -61,7 +61,7 @@ namespace RaDbTests
         {
             if (Directory.Exists("testdb")) Directory.Delete("testdb", true);
 
-            using (var db = new Database("testdb"))
+            using (var db = new Database<string>("testdb"))
             {
                 for (var i = 0; i < 200000; i++)
                 {
@@ -85,7 +85,7 @@ namespace RaDbTests
         {
             if (Directory.Exists("testdb")) Directory.Delete("testdb", true);
 
-            using (var db = new Database("testdb"))
+            using (var db = new Database<string>("testdb"))
             {
                 for (var i = 0; i < 150; i++)
                 {
@@ -104,5 +104,41 @@ namespace RaDbTests
             if (Directory.Exists("testdb")) Directory.Delete("testdb", true);
         }
 
+
+
+
+        [TestMethod]
+        public void SimpleDatabaseTestWithPoco()
+        {
+            if (Directory.Exists("testdb")) Directory.Delete("testdb", true);
+
+            using (var db = new Database<TestClass>("testdb"))
+            {
+                db.Set("foo", new TestClass { Foo = "foo", Bar = 1337, Baz=true, Qux = Math.PI });
+                Assert.IsNotNull(db.Get("foo"));
+            }
+
+            using (var db = new Database<TestClass>("testdb"))
+            {
+                var foo = db.Get("foo");
+                Assert.AreEqual("foo", foo.Foo);
+                Assert.AreEqual(1337, foo.Bar);
+                Assert.IsTrue(foo.Baz);
+                Assert.AreEqual(Math.PI, foo.Qux);
+            }
+
+            if (Directory.Exists("testdb")) Directory.Delete("testdb", true);
+        }
+
+
+    }
+
+    [Serializable]
+    public class TestClass
+    {
+        public string Foo { get; set; }
+        public int Bar { get; set; }
+        public bool Baz { get; set; }
+        public double Qux { get; set; }
     }
 }

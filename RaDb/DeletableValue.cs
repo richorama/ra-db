@@ -6,28 +6,28 @@ using System.Threading.Tasks;
 
 namespace RaDb
 {
-    public class DeletableValue
+    public class DeletableValue<T>
     {
 
-        public static DeletableValue FromValue(string value)
+        public static DeletableValue<T> FromValue(T value)
         {
-            return new DeletableValue
+            return new DeletableValue<T>
             {
                 IsDeleted = false,
                 Value = value
             };
         }
 
-        public static DeletableValue FromDelete()
+        public static DeletableValue<T> FromDelete()
         {
-            return new DeletableValue
+            return new DeletableValue<T>
             {
                 IsDeleted = true,
-                Value = null
+                Value = default(T)
             };
         }
 
-        public string Value { get; set; }
+        public T Value { get; set; }
         public bool IsDeleted { get; set; }
     }
 }

@@ -12,20 +12,20 @@ namespace RaDb
         Delete
     }
 
-    public class LogEntry
+    public class LogEntry<T>
     {
-        public static LogEntry CreateWrite(string key, string value)
+        public static LogEntry<T> CreateWrite(string key, T value)
         {
-            return new LogEntry { Key = key, Value = value, Operation = Operation.Write };
+            return new LogEntry<T> { Key = key, Value = value, Operation = Operation.Write };
         }
 
-        public static LogEntry CreateDelete(string key)
+        public static LogEntry<T> CreateDelete(string key)
         {
-            return new LogEntry { Key = key, Value = "", Operation = Operation.Delete };
+            return new LogEntry<T> { Key = key, Value = default(T), Operation = Operation.Delete };
         }
 
         public string Key { get; set; }
-        public string Value { get; set; }
+        public T Value { get; set; }
         public Operation Operation { get; set; }
     }
 }

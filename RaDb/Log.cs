@@ -7,17 +7,17 @@ using System.Threading;
 
 namespace RaDb
 {
-    public delegate void LogEntryHandler(LogEntry logEvent);
+    public delegate void LogEntryHandler<T>(LogEntry<T> logEvent);
 
 
     /// <summary>
     /// The log of database operations
     /// </summary>
-    public class Log : IDisposable
+    public class Log<T> : IDisposable
     {
         Stream logStream;
-        ConcurrentDictionary<string, string> cache = new ConcurrentDictionary<string, string>();
-        public event LogEntryHandler LogEvent;
+        ConcurrentDictionary<string, T> cache = new ConcurrentDictionary<string, T>();
+        public event LogEntryHandler<T> LogEvent;
         HashSet<string> deletedKeys = new HashSet<string>();
 
         public Log(string filename)
@@ -47,13 +47,13 @@ namespace RaDb
 
         void LoadCache()
         {
-            foreach (var entry in this.logStream.ReadAll())
+            foreach (var entry in this.logStream.ReadAll<T>())
             {
                 ApplyToCache(entry);
             }
         }
 
-        void ApplyToCache(LogEntry entry)
+        void ApplyToCache(LogEntry<T> entry)
         {
             switch (entry.Operation)
             {
@@ -62,7 +62,7 @@ namespace RaDb
                     deletedKeys.Remove(entry.Key);
                     break;
                 case Operation.Delete:
-                    string _ = null;
+                    T _ = default(T);
                     cache.TryRemove(entry.Key, out _);
                     deletedKeys.Add(entry.Key);
                     break;
@@ -93,18 +93,18 @@ namespace RaDb
             }
         }
 
-        public DeletableValue GetValueOrDeleted(string key)
+        public DeletableValue<T> GetValueOrDeleted(string key)
         {
             if (null == key) throw new ArgumentNullException(nameof(key));
 
             if (cache.ContainsKey(key))
             {
-                return DeletableValue.FromValue(cache[key]);
+                return DeletableValue<T>.FromValue(cache[key]);
             }
 
             if (deletedKeys.Contains(key))
             {
-                return DeletableValue.FromDelete();
+                return DeletableValue<T>.FromDelete();
             }
 
             return null;
@@ -114,37 +114,37 @@ namespace RaDb
         {
             if (null == key) throw new ArgumentNullException(nameof(key));
 
-            var entry = LogEntry.CreateDelete(key);
+            var entry = LogEntry<T>.CreateDelete(key);
             this.Append(entry, requireFlush);
             this.ApplyToCache(entry);
             if (null != this.LogEvent) this.LogEvent(entry);
         }
 
-        public void Set(string key, string value, bool requireFlush = false)
+        public void Set(string key, T value, bool requireFlush = false)
         {
             if (null == key) throw new ArgumentNullException(nameof(key));
             if (null == value) throw new ArgumentNullException(nameof(value));
 
-            var entry = LogEntry.CreateWrite(key, value);
+            var entry = LogEntry<T>.CreateWrite(key, value);
             this.Append(entry, requireFlush);
             ApplyToCache(entry);
             if (null != this.LogEvent) this.LogEvent(entry);
         }
 
-        internal IEnumerable<LogEntry> Scan(string fromKey, string toKey)
+        internal IEnumerable<LogEntry<T>> Scan(string fromKey, string toKey)
         {
             foreach (var key in this.deletedKeys.Where(x => string.Compare(x, fromKey) >= 0).Where(x => string.Compare(x, toKey) < 0))
             {
-                yield return LogEntry.CreateDelete(key);
+                yield return LogEntry<T>.CreateDelete(key);
             }
 
             foreach (var entry in this.cache.Where(x => string.Compare(x.Key, fromKey) >= 0).Where(x => string.Compare(x.Key, toKey) < 0))
             {
-                yield return LogEntry.CreateWrite(entry.Key, entry.Value);
+                yield return LogEntry<T>.CreateWrite(entry.Key, entry.Value);
             }
         }
 
-        public void Append(LogEntry entry, bool requireFlush)
+        public void Append(LogEntry<T> entry, bool requireFlush)
         {
             var buffer = entry.GetBuffer();
             try

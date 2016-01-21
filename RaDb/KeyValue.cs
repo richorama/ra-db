@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace RaDb
 {
-    public class KeyValue
+    public class KeyValue<T>
     {
         public string Key { get; set; }
-        public string Value { get; set; }
+        public T Value { get; set; }
     }
 }
