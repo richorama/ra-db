@@ -22,7 +22,7 @@ namespace RaDbTests
                 {
                     log.Set($"key{i}", $"value{i}"); 
                 }
-                log.Del("key88");
+                log.Del(new string[] { "key88" });
 
                 using (var level = Level<string>.Build(log, "temp.level"))
                 {

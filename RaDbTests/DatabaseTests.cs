@@ -143,7 +143,7 @@ namespace RaDbTests
                     new KeyValue<int>("three",3)
                 };
 
-                db.Set(records);
+                db.SetMulti(records);
 
                 Assert.AreEqual(1, db.Get("one"));
                 Assert.AreEqual(2, db.Get("two"));
@@ -154,6 +154,13 @@ namespace RaDbTests
                 Assert.AreEqual(1, db.Get("one"));
                 Assert.AreEqual(2, db.Get("two"));
                 Assert.AreEqual(3, db.Get("three"));
+
+                db.Del("one", "two", "three");
+
+                Assert.AreEqual(0, db.Get("one"));
+                Assert.AreEqual(0, db.Get("two"));
+                Assert.AreEqual(0, db.Get("three"));
+
             }
 
             if (Directory.Exists("testdb")) Directory.Delete("testdb", true);

@@ -17,7 +17,9 @@ namespace RaDb
 
         public int CurrentLevelNumber { get; private set; }
 
-        public Database(string path)
+        public bool HitDisk { get; private set; }
+
+        public Database(string path, bool requestWritesToHitDisk = true)
         {
             if (null == path) throw new ArgumentNullException(nameof(path));
 
@@ -69,28 +71,25 @@ namespace RaDb
             return default(T);
         }
 
-        public void Set(string key, T value, bool requireDiskWrite = false)
+
+        public void Set(string key, T value)
         {
-            this.ActiveLog.Set(key, value, requireDiskWrite);
+            this.SetMulti(new KeyValue<T>(key, value));
+        }
+
+        public void SetMulti(params KeyValue<T>[] values)
+        {
+            this.ActiveLog.Set(values, this.HitDisk);
             if (this.ActiveLog.Size > MAX_LOG_SIZE)
             {
                 this.LevelUp();
             }
         }
 
-        public void Set(IEnumerable<KeyValue<T>> values, bool requireDiskWrite = false)
-        {
-            this.ActiveLog.Set(values, requireDiskWrite);
-            if (this.ActiveLog.Size > MAX_LOG_SIZE)
-            {
-                this.LevelUp();
-            }
-        }
 
-
-        public void Del(string key, bool requireDiskWrite = false)
+        public void Del(params string[] keys)
         {
-            this.ActiveLog.Del(key, requireDiskWrite);
+            this.ActiveLog.Del(keys, this.HitDisk);
             if (this.ActiveLog.Size > MAX_LOG_SIZE)
             {
                 this.LevelUp();

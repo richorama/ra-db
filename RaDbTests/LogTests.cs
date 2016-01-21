@@ -52,7 +52,7 @@ namespace RaDbTests
                 db.Set("foo", "baz");
                 Assert.AreEqual("baz", db.GetValueOrDeleted("foo").Value);
 
-                db.Del("foo");
+                db.Del(new string[] { "foo" });
 
                 Assert.IsTrue(db.GetValueOrDeleted("foo").IsDeleted);
                 Assert.AreEqual(0, db.Keys.Count());
@@ -115,7 +115,7 @@ namespace RaDbTests
                 Assert.AreEqual(Operation.Write, capturedEvent.Operation);
 
                 capturedEvent = new LogEntry<string>();
-                db.Del("foo");
+                db.Del(new string[] { "foo" });
                 Assert.IsNotNull(capturedEvent);
                 Assert.AreEqual("foo", capturedEvent.Key);
                 Assert.AreEqual(Operation.Delete, capturedEvent.Operation);
@@ -161,9 +161,9 @@ namespace RaDbTests
 
             using (var db = new Log<string>("test.log"))
             {
-                db.Del("foo");
-                db.Del("foo");
-                db.Del("foo");
+                db.Del(new string[] { "foo" });
+                db.Del(new string[] { "foo" });
+                db.Del(new string[] { "foo" });
             }
 
             File.Delete("test.log");
@@ -192,12 +192,14 @@ namespace RaDbTests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(ArgumentNullException))]
         public void NullValue()
         {
             using (var db = new Log<string>(new MemoryStream()))
             {
                 db.Set("key", null);
+                var result = db.GetValueOrDeleted("key");
+                Assert.IsNull(result.Value);
+                Assert.IsFalse(result.IsDeleted);
             }
         }
 
@@ -211,7 +213,7 @@ namespace RaDbTests
             {
                 db.Set("foo", "bar");
                 db.Set("baz", "qux");
-                db.Del("foo");
+                db.Del(new string[] { "foo" });
                 db.Clear();
 
                 Assert.AreEqual(0, db.DeletedKeys.Count());

@@ -110,28 +110,29 @@ namespace RaDb
             return null;
         }
 
-        public void Del(string key, bool requireFlush = false)
+        public void Del(string[] keys, bool requireFlush = false)
         {
-            if (null == key) throw new ArgumentNullException(nameof(key));
+            if (null == keys) throw new ArgumentNullException(nameof(keys));
 
-            var entry = LogEntry<T>.CreateDelete(key);
-            this.Append(entry, requireFlush);
-            this.ApplyToCache(entry);
-            if (null != this.LogEvent) this.LogEvent(entry);
+            var deletes = keys.Select(x => LogEntry<T>.CreateDelete(x)).ToArray();
+
+            this.Append(deletes, requireFlush);
+            foreach (var delete in deletes)
+            {
+                this.ApplyToCache(delete);
+                if (null != this.LogEvent) this.LogEvent(delete);
+            }
         }
 
         public void Set(string key, T value, bool requireFlush = false)
         {
-            if (null == key) throw new ArgumentNullException(nameof(key));
-            if (null == value) throw new ArgumentNullException(nameof(value));
-
             var entry = LogEntry<T>.CreateWrite(key, value);
             this.Append(entry, requireFlush);
             ApplyToCache(entry);
             if (null != this.LogEvent) this.LogEvent(entry);
         }
 
-        public void Set(IEnumerable<KeyValue<T>> records, bool requireFlush = false)
+        public void Set(KeyValue<T>[] records, bool requireFlush = false)
         {
             if (null == records) throw new ArgumentNullException(nameof(records));
 
