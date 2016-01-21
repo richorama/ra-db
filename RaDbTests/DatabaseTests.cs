@@ -183,7 +183,6 @@ namespace RaDbTests
             {
                 Assert.IsNull(db.Get("foo"));
             }
-
         }
     }
 
