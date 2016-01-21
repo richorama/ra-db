@@ -167,6 +167,24 @@ namespace RaDbTests
         }
 
 
+        [TestMethod]
+        public void WriteNulls()
+        {
+            if (Directory.Exists("testdb")) Directory.Delete("testdb", true);
+
+            using (var db = new Database<TestClass>("testdb"))
+            {
+                db.Set("foo", null);
+
+                Assert.IsNull(db.Get("foo"));
+            }
+
+            using (var db = new Database<TestClass>("testdb"))
+            {
+                Assert.IsNull(db.Get("foo"));
+            }
+
+        }
     }
 
     [Serializable]

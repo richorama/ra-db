@@ -54,6 +54,8 @@ namespace RaDb
 
         public T Get(string key)
         {
+            if (null == key) throw new ArgumentNullException(nameof(key));
+
             var result = this.ActiveLog.GetValueOrDeleted(key);
             if (null != result)
             {
@@ -74,11 +76,15 @@ namespace RaDb
 
         public void Set(string key, T value)
         {
+            if (null == key) throw new ArgumentNullException(nameof(key));
+
             this.SetMulti(new KeyValue<T>(key, value));
         }
 
         public void SetMulti(params KeyValue<T>[] values)
         {
+            if (null == values) throw new ArgumentNullException(nameof(values));
+
             this.ActiveLog.Set(values, this.HitDisk);
             if (this.ActiveLog.Size > MAX_LOG_SIZE)
             {
@@ -89,6 +95,8 @@ namespace RaDb
 
         public void Del(params string[] keys)
         {
+            if (null == keys) throw new ArgumentNullException(nameof(keys));
+
             this.ActiveLog.Del(keys, this.HitDisk);
             if (this.ActiveLog.Size > MAX_LOG_SIZE)
             {
