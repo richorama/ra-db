@@ -35,7 +35,7 @@ using (var db = new Database<string>("."))
 * Think about isolation during search and compaction
 * Perf perf perf
 * Implement a cache on the levels (perhaps after the bloom filter?)
-* Support batching
+* ~~Support batching~~
 
 ## License
 
