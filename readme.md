@@ -37,6 +37,7 @@ using (var db = new Database<string>("."))
 * Implement a cache on the levels (perhaps after the bloom filter?)
 * Look at an alternative binary serializer
 * Run distributed with raft
+* Add an HTTP API
 * ~~Support batching~~
 
 ## License
