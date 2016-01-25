@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace RaDb
 {
-    public static class ExtensionMethods
+    internal static class ExtensionMethods
     {
 
         public static byte[] GetBytes(this object value)

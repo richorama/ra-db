@@ -19,10 +19,11 @@ namespace RaDb
 
         public bool HitDisk { get; private set; }
 
-        public Database(string path, bool requestWritesToHitDisk = true)
+        public Database(string path, bool requireWritesToHitDisk = true)
         {
             if (null == path) throw new ArgumentNullException(nameof(path));
 
+            this.HitDisk = requireWritesToHitDisk;
             this.DbDirectory = Directory.CreateDirectory(path);
             this.Levels = new List<Level<T>>();
 
@@ -112,14 +113,14 @@ namespace RaDb
         }
 
 
-        void LevelUp()
+        public void LevelUp(bool force = false)
         {
             try
             {
                 // TODO: Figure out if some of this could be done in a background task?
 
                 Monitor.Enter(this.ActiveLog);
-                if (this.ActiveLog.Size <= MAX_LOG_SIZE) return;
+                if (this.ActiveLog.Size <= MAX_LOG_SIZE && !force) return;
                
                 var filename = this.NextLevelName();
                 var level = Level<T>.Build(this.ActiveLog, filename);
@@ -150,26 +151,32 @@ namespace RaDb
         }
 
 
-        public IEnumerable<KeyValue<T>> Search(string fromKey, string toKey)
+        public IEnumerable<KeyValue<T>> Between(string fromKey, string toKey)
         {
             if (null == fromKey) throw new ArgumentNullException(nameof(fromKey));
             if (null == toKey) throw new ArgumentNullException(nameof(toKey));
 
-            var results = new Dictionary<string, T>();
-            foreach (var level in this.Levels)
-            {
-                foreach (var item in level.Scan(fromKey, toKey))
-                {
-                    results.ApplyOperation(item);
-                }
-            }
+            var ignoreList = new HashSet<string>();
 
             foreach (var item in this.ActiveLog.Scan(fromKey, toKey))
             {
-                results.ApplyOperation(item);
+                ignoreList.Add(item.Key);
+                if (item.Operation == Operation.Delete) continue;
+                yield return new KeyValue<T>(item.Key, item.Value);
             }
 
-            return results.Select(x => new KeyValue<T> { Key = x.Key, Value = x.Value }).OrderBy(x => x.Key);
+            for (var i = this.Levels.Count - 1; i >= 0; i--)
+            {
+                var level = this.Levels[i];
+                foreach (var item in level.Scan(fromKey, toKey))
+                {
+                    if (ignoreList.Contains(item.Key)) continue;
+                    ignoreList.Add(item.Key);
+                    if (item.Operation == Operation.Delete) continue;
+                    yield return new KeyValue<T>(item.Key, item.Value);
+                }                   
+            }
+        
         }
 
         public void Dispose()

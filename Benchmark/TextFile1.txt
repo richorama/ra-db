@@ -1,0 +1,17 @@
+﻿BASELINE
+	insert time 5879ms
+	compacted
+	get time 6060ms
+	search time 3429ms
+
+with b-tree index
+	insert time 6121ms
+	compacted
+	get time 49ms
+	search time 3310ms
+
+with search nearest b-tree index 
+	insert time 6020ms
+	compacted
+	get time 54ms
+	search time 50ms

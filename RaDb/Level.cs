@@ -1,4 +1,5 @@
-﻿using System;
+﻿using RaDb.Index;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -18,6 +19,7 @@ namespace RaDb
     {
         Stream levelStream;
         BloomFilter<string> filter;
+        BTree<string, long> index;
 
         public string Filename { get; private set; }
 
@@ -40,9 +42,11 @@ namespace RaDb
         void InitBloomFilter()
         {
             filter = new BloomFilter<string>(10000); // work this out
+            index = new BTree<string, long>();
             foreach (var key in this.StreamAllKeys())
             {
-                filter.Add(key);
+                filter.Add(key.Item1);
+                index.Insert(key.Item1, key.Item2);
             }
         }
 
@@ -102,7 +106,18 @@ namespace RaDb
 
         public IEnumerable<LogEntry<T>> Scan(string from, string to)
         {
-            this.levelStream.Position = 0;
+            // look up the position in the index
+            var result = index.SearchNearest(from);
+            
+            if (null != result)
+            {
+                // less likely to get a match here, as from and to are speculative
+                this.levelStream.Position = result.Pointer;
+            }
+            else
+            {
+                this.levelStream.Position = 0;
+            }
             while (this.levelStream.Position < this.levelStream.Length)
             {
                 // read header information 
@@ -134,22 +149,36 @@ namespace RaDb
             }
         }
 
-        IEnumerable<string> StreamAllKeys()
+
+        IEnumerable<Tuple<string,long>> StreamAllKeys()
         {
             this.levelStream.Position = 0;
             while (this.levelStream.Position < this.levelStream.Length)
             {
+                var position = this.levelStream.Position;
                 var keySize = this.levelStream.ReadInt();
                 var valueSize = this.levelStream.ReadInt();
                 this.levelStream.Position += 1;
-                yield return this.levelStream.ReadString(keySize);
+                yield return new Tuple<string,long>(this.levelStream.ReadString(keySize), position);
                 this.levelStream.Position += valueSize;
             }
         }
 
+
+
         LogEntry<T> Find(string key)
         {
-            this.levelStream.Position = 0;
+            // look up the position in the index
+            var result = index.Search(key);
+            if (null != result)
+            {
+                this.levelStream.Position = result.Pointer;
+            }
+            else
+            {
+                this.levelStream.Position = 0;
+            }
+
             while (this.levelStream.Position < this.levelStream.Length)
             {
                 // read header information 

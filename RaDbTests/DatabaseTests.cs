@@ -34,7 +34,7 @@ namespace RaDbTests
         {
             if (Directory.Exists("testdb")) Directory.Delete("testdb", true);
 
-            using (var db = new Database<string>("testdb"))
+            using (var db = new Database<string>("testdb", false))
             {
                 for (var i = 0; i < 100000; i++)
                 {
@@ -61,7 +61,7 @@ namespace RaDbTests
         {
             if (Directory.Exists("testdb")) Directory.Delete("testdb", true);
 
-            using (var db = new Database<string>("testdb"))
+            using (var db = new Database<string>("testdb", false))
             {
                 for (var i = 0; i < 200000; i++)
                 {
@@ -71,7 +71,7 @@ namespace RaDbTests
                 Console.WriteLine($"levels : {db.CurrentLevelNumber}");
                 db.Del("00000101");
 
-                var results = db.Search("00000100", "00000110").ToArray();
+                var results = db.Between("00000100", "00000110").OrderBy(x => x.Key).ToArray();
                 Assert.AreEqual(9, results.Length);
                 Assert.AreEqual("00000100", results[0].Key);
                 Assert.IsFalse(results.Select(x => x.Key).Contains("00000101"));
@@ -95,7 +95,7 @@ namespace RaDbTests
                 Console.WriteLine($"levels : {db.CurrentLevelNumber}");
                 db.Del("00000101");
 
-                var results = db.Search("00000100", "00000110").ToArray();
+                var results = db.Between("00000100", "00000110").OrderBy(x => x.Key).ToArray();
                 Assert.AreEqual(9, results.Length);
                 Assert.AreEqual("00000100", results[0].Key);
                 Assert.IsFalse(results.Select(x => x.Key).Contains("00000101"));

@@ -141,7 +141,14 @@ namespace RaDb
             foreach (var entry in entries)
             {
                 ApplyToCache(entry);
-                if (null != this.LogEvent) this.LogEvent(entry);
+            }
+
+            if (null != this.LogEvent)
+            {
+                foreach (var entry in entries)
+                {
+                    this.LogEvent(entry);
+                }
             }
         }
 
