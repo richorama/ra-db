@@ -35,7 +35,10 @@ using (var db = new Database<string>("."))
 * Think about isolation during search and compaction
 * Perf perf perf
 * Implement a cache on the levels (perhaps after the bloom filter?)
-* Support batching
+* Look at an alternative binary serializer
+* Run distributed with raft
+* Add an HTTP API
+* ~~Support batching~~
 
 ## License
 
