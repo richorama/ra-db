@@ -43,7 +43,7 @@ using (var db = new Database<MyValue>("."))
 
 * Think about isolation during search and compaction
 * Perf perf perf
-* Implement a cache on the levels (perhaps after the bloom filter?)
+* ~~Implement a cache on the levels~~
 * ~~Add an index~~
 * Add secondary indexes
 * ~~Look at an alternative binary serializer~~
