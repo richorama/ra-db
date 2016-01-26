@@ -4,6 +4,8 @@ An experiment in .NET databases inspired by LevelDB.
 
 __DO NOT USE__
 
+[![Build status](https://ci.appveyor.com/api/projects/status/q6h8balj05jivn8m?svg=true)](https://ci.appveyor.com/project/richorama/ra-db)
+
 ## Usage
 
 If you must use this database, you can do so like this:
