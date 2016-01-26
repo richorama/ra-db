@@ -11,7 +11,7 @@
     /// </summary>
     /// <typeparam name="TK">Type of BTree Key.</typeparam>
     /// <typeparam name="TP">Type of BTree Pointer associated with each Key.</typeparam>
-    public class BTree<TK, TP> where TK : IComparable<TK>
+    public class BTree<TK, TP> : IBTree<TK, TP> where TK : IComparable<TK>
     {
         public BTree(int degree = 2)
         {

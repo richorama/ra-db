@@ -9,13 +9,20 @@ using System.Threading.Tasks;
 
 namespace Benchmark
 {
+    public class TestValue
+    {
+        public int Value { get; set; }
+    }
+
     class Program
     {
+
+
         static void Main(string[] args)
         {
             var rand = new Random();
             if (Directory.Exists("benchmark")) Directory.Delete("benchmark", true);
-            using (var db = new Database<int>("benchmark"))
+            using (var db = new Database<TestValue>("benchmark"))
             {
                 var timer = Stopwatch.StartNew();
                 for (var i = 0; i < 300000; i++)
@@ -24,7 +31,7 @@ namespace Benchmark
                      // var value = db.Get(key);
                     var value = 0;
                     value++;
-                    db.Set(key, value);
+                    db.Set(key, new TestValue { Value = value });
                 }
                 timer.Stop();
                 Console.WriteLine($"insert time {timer.ElapsedMilliseconds}ms");

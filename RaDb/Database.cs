@@ -19,23 +19,26 @@ namespace RaDb
 
         public bool HitDisk { get; private set; }
 
-        public Database(string path, bool requireWritesToHitDisk = true)
+        public ISerializer<T> Serializer { get; private set; }
+
+        public Database(string path, bool requireWritesToHitDisk = true, ISerializer<T> serializer = null)
         {
             if (null == path) throw new ArgumentNullException(nameof(path));
 
             this.HitDisk = requireWritesToHitDisk;
             this.DbDirectory = Directory.CreateDirectory(path);
             this.Levels = new List<Level<T>>();
+            this.Serializer = serializer ?? new Serializer<T>();
 
             foreach (var file in this.DbDirectory.EnumerateFiles().OrderBy(x => x.Name))
             {
                 switch (file.Extension)
                 {
                     case ".log":
-                        this.ActiveLog = new Log<T>(file.FullName);
+                        this.ActiveLog = new Log<T>(file.FullName, this.Serializer);
                         break;
                     case ".level":
-                        this.Levels.Add(new Level<T>(file.FullName));
+                        this.Levels.Add(new Level<T>(file.FullName, this.Serializer));
                         this.CurrentLevelNumber = int.Parse(file.Name.Replace(".level", ""));
                         break;
                 }
@@ -46,7 +49,7 @@ namespace RaDb
 
             if (null == this.ActiveLog)
             {
-                this.ActiveLog = new Log<T>(Path.Combine(this.DbDirectory.FullName, "database.log"));
+                this.ActiveLog = new Log<T>(Path.Combine(this.DbDirectory.FullName, "database.log"), this.Serializer);
             }
         }
 
@@ -123,7 +126,7 @@ namespace RaDb
                 if (this.ActiveLog.Size <= MAX_LOG_SIZE && !force) return;
                
                 var filename = this.NextLevelName();
-                var level = Level<T>.Build(this.ActiveLog, filename);
+                var level = Level<T>.Build(this.ActiveLog, filename, Serializer);
                 this.Levels.Add(level);
                 this.ActiveLog.Clear();
 
@@ -132,7 +135,7 @@ namespace RaDb
                     // we've hit the max numer of levels, so consolidate down to a single level
                     // compactions are extremely experimental!!!
                     var compactedFilename = this.NextLevelName();
-                    var newLevel = Level<T>.Compaction(this.Levels, compactedFilename);
+                    var newLevel = Level<T>.Compaction(this.Levels, compactedFilename, Serializer);
                     var oldLevels = this.Levels.ToArray();
                     this.Levels.Clear();
                     this.Levels.Add(newLevel);

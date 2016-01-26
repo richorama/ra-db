@@ -14,15 +14,15 @@ namespace RaDbTests
         {
             if (Directory.Exists("testdb")) Directory.Delete("testdb", true);
 
-            using (var db = new Database<string>("testdb"))
+            using (var db = new Database<TestEntry>("testdb"))
             {
-                db.Set("foo", "bar");
-                Assert.AreEqual("bar", db.Get("foo"));
+                db.Set("foo", new TestEntry("bar"));
+                Assert.AreEqual("bar", db.Get("foo").Value);
             }
 
-            using (var db = new Database<string>("testdb"))
+            using (var db = new Database<TestEntry>("testdb"))
             {
-                Assert.AreEqual("bar", db.Get("foo"));
+                Assert.AreEqual("bar", db.Get("foo").Value);
             }
 
             if (Directory.Exists("testdb")) Directory.Delete("testdb", true);
@@ -34,11 +34,11 @@ namespace RaDbTests
         {
             if (Directory.Exists("testdb")) Directory.Delete("testdb", true);
 
-            using (var db = new Database<string>("testdb", false))
+            using (var db = new Database<TestEntry>("testdb", false))
             {
                 for (var i = 0; i < 100000; i++)
                 {
-                    db.Set(i.ToString(), Guid.NewGuid().ToString());
+                    db.Set(i.ToString(), new TestEntry(Guid.NewGuid().ToString()));
                 }
 
                 Assert.IsNotNull(db.Get("5000"));
@@ -47,7 +47,7 @@ namespace RaDbTests
                 Console.WriteLine($"levels : {db.CurrentLevelNumber}");
             }
 
-            using (var db = new Database<string>("testdb"))
+            using (var db = new Database<TestEntry>("testdb"))
             {
                 Assert.IsNotNull(db.Get("5000"));
                 Assert.IsNull(db.Get("xxxx"));
@@ -61,11 +61,11 @@ namespace RaDbTests
         {
             if (Directory.Exists("testdb")) Directory.Delete("testdb", true);
 
-            using (var db = new Database<string>("testdb", false))
+            using (var db = new Database<TestEntry>("testdb", false))
             {
                 for (var i = 0; i < 200000; i++)
                 {
-                    db.Set(i.ToString("D8"), Guid.NewGuid().ToString());
+                    db.Set(i.ToString("D8"), new TestEntry(Guid.NewGuid().ToString()));
                 }
 
                 Console.WriteLine($"levels : {db.CurrentLevelNumber}");
@@ -85,11 +85,11 @@ namespace RaDbTests
         {
             if (Directory.Exists("testdb")) Directory.Delete("testdb", true);
 
-            using (var db = new Database<string>("testdb"))
+            using (var db = new Database<TestEntry>("testdb"))
             {
                 for (var i = 0; i < 150; i++)
                 {
-                    db.Set(i.ToString("D8"), Guid.NewGuid().ToString());
+                    db.Set(i.ToString("D8"), new TestEntry(Guid.NewGuid().ToString()));
                 }
 
                 Console.WriteLine($"levels : {db.CurrentLevelNumber}");
@@ -135,31 +135,31 @@ namespace RaDbTests
         {
             if (Directory.Exists("testdb")) Directory.Delete("testdb", true);
 
-            using (var db = new Database<int>("testdb"))
+            using (var db = new Database<TestEntry>("testdb"))
             {
-                var records = new KeyValue<int>[] {
-                    new KeyValue<int>("one",1),
-                    new KeyValue<int>("two",2),
-                    new KeyValue<int>("three",3)
+                var records = new KeyValue<TestEntry>[] {
+                    new KeyValue<TestEntry>("one",new TestEntry("1")),
+                    new KeyValue<TestEntry>("two",new TestEntry("2")),
+                    new KeyValue<TestEntry>("three",new TestEntry("3"))
                 };
 
                 db.SetMulti(records);
 
-                Assert.AreEqual(1, db.Get("one"));
-                Assert.AreEqual(2, db.Get("two"));
-                Assert.AreEqual(3, db.Get("three"));
+                Assert.AreEqual("1", db.Get("one").Value);
+                Assert.AreEqual("2", db.Get("two").Value);
+                Assert.AreEqual("3", db.Get("three").Value);
             }
-            using (var db = new Database<int>("testdb"))
+            using (var db = new Database<TestEntry>("testdb"))
             {
-                Assert.AreEqual(1, db.Get("one"));
-                Assert.AreEqual(2, db.Get("two"));
-                Assert.AreEqual(3, db.Get("three"));
+                Assert.AreEqual("1", db.Get("one").Value);
+                Assert.AreEqual("2", db.Get("two").Value);
+                Assert.AreEqual("3", db.Get("three").Value);
 
                 db.Del("one", "two", "three");
 
-                Assert.AreEqual(0, db.Get("one"));
-                Assert.AreEqual(0, db.Get("two"));
-                Assert.AreEqual(0, db.Get("three"));
+                Assert.IsNull(db.Get("one"));
+                Assert.IsNull(db.Get("two"));
+                Assert.IsNull(db.Get("three"));
 
             }
 

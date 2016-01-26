@@ -11,27 +11,29 @@ namespace RaDbTests
     [TestClass]
     public class LogTests
     {
+        Serializer<TestEntry> serializer = new Serializer<TestEntry>();
+
         [TestMethod]
         public void BasicWriteTest()
         {
             if (File.Exists("test.log")) File.Delete("test.log");
 
-            using (var db = new Log<string>("test.log"))
+            using (var db = new Log<TestEntry>("test.log", serializer))
             {
-                db.Set("foo", "bar");
-                db.Set("baz", "qux");
+                db.Set("foo", new TestEntry("bar"));
+                db.Set("baz", new TestEntry("qux"));
 
-                Assert.AreEqual("bar", db.GetValueOrDeleted("foo").Value);
-                Assert.AreEqual("qux", db.GetValueOrDeleted("baz").Value);
+                Assert.AreEqual("bar", db.GetValueOrDeleted("foo").Value.Value);
+                Assert.AreEqual("qux", db.GetValueOrDeleted("baz").Value.Value);
                 Assert.AreEqual(2, db.Keys.Count());
                 Assert.IsTrue(db.Keys.Contains("foo"));
                 Assert.IsTrue(db.Keys.Contains("baz"));
             }
 
-            using (var db = new Log<string>("test.log"))
+            using (var db = new Log<TestEntry>("test.log", serializer))
             {
-                Assert.AreEqual("bar", db.GetValueOrDeleted("foo").Value);
-                Assert.AreEqual("qux", db.GetValueOrDeleted("baz").Value);
+                Assert.AreEqual("bar", db.GetValueOrDeleted("foo").Value.Value);
+                Assert.AreEqual("qux", db.GetValueOrDeleted("baz").Value.Value);
             }
 
             File.Delete("test.log");
@@ -44,13 +46,13 @@ namespace RaDbTests
         {
             if (File.Exists("test.log")) File.Delete("test.log");
 
-            using (var db = new Log<string>("test.log"))
+            using (var db = new Log<TestEntry>("test.log", serializer))
             {
-                db.Set("foo", "bar");
-                Assert.AreEqual("bar", db.GetValueOrDeleted("foo").Value);
+                db.Set("foo", new TestEntry("bar"));
+                Assert.AreEqual("bar", db.GetValueOrDeleted("foo").Value.Value);
 
-                db.Set("foo", "baz");
-                Assert.AreEqual("baz", db.GetValueOrDeleted("foo").Value);
+                db.Set("foo", new TestEntry("baz"));
+                Assert.AreEqual("baz", db.GetValueOrDeleted("foo").Value.Value);
 
                 db.Del(new string[] { "foo" });
 
@@ -61,7 +63,7 @@ namespace RaDbTests
 
             }
 
-            using (var db = new Log<string>("test.log"))
+            using (var db = new Log<TestEntry>("test.log", serializer))
             {
                 Assert.AreEqual(0, db.Keys.Count());
                 Assert.IsTrue(db.GetValueOrDeleted("foo").IsDeleted);
@@ -79,16 +81,16 @@ namespace RaDbTests
             var key = new string('k', 5000);
             var value = new string('v', 5000);
 
-            using (var db = new Log<string>("test.log"))
+            using (var db = new Log<TestEntry>("test.log", serializer))
             {
-                db.Set(key, value);
-                Assert.AreEqual(value, db.GetValueOrDeleted(key).Value);
+                db.Set(key, new TestEntry(value));
+                Assert.AreEqual(value, db.GetValueOrDeleted(key).Value.Value);
                 Assert.AreEqual(1, db.Keys.Count());
             }
 
-            using (var db = new Log<string>("test.log"))
+            using (var db = new Log<TestEntry>("test.log", serializer))
             {
-                Assert.AreEqual(value, db.GetValueOrDeleted(key).Value);
+                Assert.AreEqual(value, db.GetValueOrDeleted(key).Value.Value);
                 Assert.AreEqual(1, db.Keys.Count());
             }
 
@@ -100,21 +102,21 @@ namespace RaDbTests
         {
             if (File.Exists("test.log")) File.Delete("test.log");
 
-            using (var db = new Log<string>("test.log"))
+            using (var db = new Log<TestEntry>("test.log", serializer))
             {
-                var capturedEvent = new LogEntry<string>();
+                var capturedEvent = new LogEntry<TestEntry>();
                 db.LogEvent += x => 
                 {
                     capturedEvent = x;
                 };
-                db.Set("foo", "bar");
-                Assert.AreEqual("bar", db.GetValueOrDeleted("foo").Value);
+                db.Set("foo", new TestEntry("bar"));
+                Assert.AreEqual("bar", db.GetValueOrDeleted("foo").Value.Value);
                 Assert.IsNotNull(capturedEvent);
                 Assert.AreEqual("foo", capturedEvent.Key);
-                Assert.AreEqual("bar", capturedEvent.Value);
+                Assert.AreEqual("bar", capturedEvent.Value.Value);
                 Assert.AreEqual(Operation.Write, capturedEvent.Operation);
 
-                capturedEvent = new LogEntry<string>();
+                capturedEvent = new LogEntry<TestEntry>();
                 db.Del(new string[] { "foo" });
                 Assert.IsNotNull(capturedEvent);
                 Assert.AreEqual("foo", capturedEvent.Key);
@@ -137,12 +139,12 @@ namespace RaDbTests
             var value = Guid.NewGuid().ToString();
 
             
-            using (var db = new Log<string>("test.log"))
+            using (var db = new Log<TestEntry>("test.log", serializer))
             {
                 var sw = Stopwatch.StartNew();
                 foreach (var key in Enumerable.Range(0, count))
                 {
-                    db.Set(key.ToString(), value);
+                    db.Set(key.ToString(), new TestEntry(value));
                 }
                 sw.Stop();
                 Console.WriteLine(sw.ElapsedMilliseconds);
@@ -159,7 +161,7 @@ namespace RaDbTests
         {
             if (File.Exists("test.log")) File.Delete("test.log");
 
-            using (var db = new Log<string>("test.log"))
+            using (var db = new Log<TestEntry>("test.log", serializer))
             {
                 db.Del(new string[] { "foo" });
                 db.Del(new string[] { "foo" });
@@ -173,7 +175,7 @@ namespace RaDbTests
         public void GetNonExistantKeys()
         {
 
-            using (var db = new Log<string>(new MemoryStream()))
+            using (var db = new Log<TestEntry>(new MemoryStream(), serializer))
             {
                 Assert.IsNull(db.GetValueOrDeleted("foo"));
             }
@@ -185,16 +187,16 @@ namespace RaDbTests
         [ExpectedException(typeof(ArgumentNullException))]
         public void NullKey()
         {
-            using (var db = new Log<string>(new MemoryStream()))
+            using (var db = new Log<TestEntry>(new MemoryStream(), serializer))
             {
-                db.Set(null, "value");
+                db.Set(null, new TestEntry("value"));
             }
         }
 
         [TestMethod]
         public void NullValue()
         {
-            using (var db = new Log<string>(new MemoryStream()))
+            using (var db = new Log<TestEntry>(new MemoryStream(), serializer))
             {
                 db.Set("key", null);
                 var result = db.GetValueOrDeleted("key");
@@ -209,10 +211,10 @@ namespace RaDbTests
         {
             if (File.Exists("test.log")) File.Delete("test.log");
 
-            using (var db = new Log<string>("test.log"))
+            using (var db = new Log<TestEntry>("test.log", serializer))
             {
-                db.Set("foo", "bar");
-                db.Set("baz", "qux");
+                db.Set("foo", new TestEntry("bar"));
+                db.Set("baz", new TestEntry("qux"));
                 db.Del(new string[] { "foo" });
                 db.Clear();
 
@@ -221,7 +223,7 @@ namespace RaDbTests
                 Assert.IsNull(db.GetValueOrDeleted("baz"));
             }
 
-            using (var db = new Log<string>("test.log"))
+            using (var db = new Log<TestEntry>("test.log", serializer))
             {
                 Assert.AreEqual(0, db.DeletedKeys.Count());
                 Assert.AreEqual(0, db.Keys.Count());

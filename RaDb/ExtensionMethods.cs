@@ -1,50 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace RaDb
 {
     internal static class ExtensionMethods
     {
-
-        public static byte[] GetBytes(this object value)
+        public static T ReadObject<T>(this Stream stream, ISerializer<T> serializer, int length)
         {
-            if (value == null) return new byte[0];
-
-            var bf = new BinaryFormatter();
-            using (var ms = new MemoryStream())
-            {
-                bf.Serialize(ms, value);
-                return ms.ToArray();
-            }
-        }
-
-        public static T GetObject<T>(this byte[] value)
-        {
-            if (value == null) throw new ArgumentNullException(nameof(value));
-
-            if (value.Length == 0) return default(T);
-
-            var bf = new BinaryFormatter();
-            using (var memStream = new MemoryStream())
-            {
-                memStream.Write(value, 0, value.Length);
-                memStream.Seek(0, SeekOrigin.Begin);
-                return (T)bf.Deserialize(memStream);
-            }
-        }
-
-        public static T ReadObject<T>(this Stream stream, int length)
-        {
-            if (length == 0) return default(T);
-
-            var buffer = new byte[length];
-            stream.Read(buffer, 0, length);
-            return buffer.GetObject<T>();
+            return serializer.Deserialize(stream, length);
         }
 
         public static byte[] GetBytes(this string str)
@@ -71,10 +37,10 @@ namespace RaDb
             return buffer.GetString();
         }
 
-        public static byte[] GetBuffer<T>(this LogEntry<T> entry)
+        public static byte[] GetBuffer<T>(this LogEntry<T> entry, ISerializer<T> serializer)
         {
             var keyBuffer = entry.Key.GetBytes();
-            var valueBuffer = entry.Value.GetBytes();
+            var valueBuffer = serializer.Serialize(entry.Value);
 
             var buffer = new byte[keyBuffer.Length + valueBuffer.Length + 4 + 4 + 1];
             var index = 0;
@@ -92,17 +58,17 @@ namespace RaDb
             return buffer;
         }
 
-        public static byte[] GetBuffer<T>(this IEnumerable<LogEntry<T>> entries)
+        public static byte[] GetBuffer<T>(this IEnumerable<LogEntry<T>> entries, ISerializer<T> serializer)
         {
             var output = new List<byte>();
             foreach (var entry in entries)
             {
-                output.AddRange(entry.GetBuffer());
+                output.AddRange(entry.GetBuffer(serializer));
             }
             return output.ToArray();
         }
 
-        public static LogEntry<T> ReadEntry<T>(this Stream stream)
+        public static LogEntry<T> ReadEntry<T>(this Stream stream, ISerializer<T> serializer)
         {
             var keySize = stream.ReadInt();
             var valueSize = stream.ReadInt();
@@ -110,17 +76,17 @@ namespace RaDb
             return new LogEntry<T>
             {
                 Key = stream.ReadString(keySize),
-                Value = stream.ReadObject<T>(valueSize),
+                Value = valueSize == 0 ? default(T) : stream.ReadObject<T>(serializer, valueSize),
                 Operation = operation
             };
         }
 
-        public static IEnumerable<LogEntry<T>> ReadAll<T>(this Stream stream)
+        public static IEnumerable<LogEntry<T>> ReadAll<T>(this Stream stream, ISerializer<T> serializer)
         {
             stream.Position = 0;
             while (stream.Position < stream.Length)
             {
-                yield return stream.ReadEntry<T>();
+                yield return stream.ReadEntry<T>(serializer);
             }
         }
 

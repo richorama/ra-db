@@ -18,51 +18,56 @@ namespace RaDb
     public class Level<T> : IDisposable
     {
         Stream levelStream;
-        BloomFilter<string> filter;
-        BTree<string, long> index;
+        //BloomFilter<string> filter;
+        IBTree<string, long> index;
+        ISerializer<T> serializer;
 
         public string Filename { get; private set; }
 
-        public Level(string filename)
+        public Level(string filename, ISerializer<T> serializer, IBTree<string, long> index = null)
         {
             if (null == filename) throw new ArgumentNullException(nameof(filename));
             this.Filename = filename;
+            this.serializer = serializer;
             this.levelStream = new FileStream(filename, FileMode.OpenOrCreate);
-            InitBloomFilter();
+            this.index = index ?? new BTree<string, long>();
+            InitIndex();
         }
 
-        public Level(Stream stream, string filename)
+        public Level(Stream stream, string filename, ISerializer<T> serializer, IBTree<string,long> index = null)
         {
             if (null == stream) throw new ArgumentNullException(nameof(stream));
             this.Filename = filename;
+            this.serializer = serializer;
             this.levelStream = stream;
-            InitBloomFilter();
+            this.index = index ?? new BTree<string, long>();
+            InitIndex();
         }
 
-        void InitBloomFilter()
+        void InitIndex()
         {
-            filter = new BloomFilter<string>(10000); // work this out
-            index = new BTree<string, long>();
+            //filter = new BloomFilter<string>(10000); // work this out
+            
             foreach (var key in this.StreamAllKeys())
             {
-                filter.Add(key.Item1);
+                //filter.Add(key.Item1);
                 index.Insert(key.Item1, key.Item2);
             }
         }
 
-        public static Level<T> Build(Log<T> log, string filename)
+        public static Level<T> Build(Log<T> log, string filename, ISerializer<T> serializer)
         {
             var stream = new FileStream(filename, FileMode.OpenOrCreate);
             stream.Position = 0;
             foreach (var logEntry in StreamLogEntry(log).OrderBy(x => x.Key))
             {
-                var buffer = logEntry.GetBuffer();
+                var buffer = logEntry.GetBuffer(serializer);
                 stream.Write(buffer, 0, buffer.Length);
             }
-            return new Level<T>(stream, filename);
+            return new Level<T>(stream, filename, serializer);
         }
 
-        public static Level<T> Compaction(IEnumerable<Level<T>> levels, string filename)
+        public static Level<T> Compaction(IEnumerable<Level<T>> levels, string filename, ISerializer<T> serializer)
         {
             var dictionary = new Dictionary<string, T>();
 
@@ -78,10 +83,10 @@ namespace RaDb
             stream.Position = 0;
             foreach (var item in dictionary.OrderBy(x => x.Key).Select(x => LogEntry<T>.CreateWrite(x.Key, x.Value)))
             {
-                var buffer = item.GetBuffer();
+                var buffer = item.GetBuffer(serializer);
                 stream.Write(buffer, 0, buffer.Length);
             }
-            return new Level<T>(stream, filename);
+            return new Level<T>(stream, filename, serializer);
 
         }
 
@@ -101,7 +106,7 @@ namespace RaDb
 
         public IEnumerable<LogEntry<T>> Scan()
         {
-            return this.levelStream.ReadAll<T>();
+            return this.levelStream.ReadAll<T>(serializer);
         }
 
         public IEnumerable<LogEntry<T>> Scan(string from, string to)
@@ -143,7 +148,7 @@ namespace RaDb
                 yield return new LogEntry<T>
                 {
                     Key = readKey,
-                    Value = this.levelStream.ReadObject<T>(valueSize),
+                    Value = valueSize == 0 ? default(T) : this.levelStream.ReadObject<T>(serializer,valueSize),
                     Operation = operation
                 };
             }
@@ -191,7 +196,7 @@ namespace RaDb
                     return new LogEntry<T>
                     {
                         Key = key,
-                        Value = this.levelStream.ReadObject<T>(valueSize),
+                        Value = valueSize == 0 ? default(T) : this.levelStream.ReadObject<T>(serializer,valueSize),
                         Operation = operation
                     };
                 }
@@ -210,7 +215,7 @@ namespace RaDb
       
         public DeletableValue<T> GetValueOrDeleted(string key)
         {
-            if (!this.filter.Contains(key)) return null;
+            //if (!this.filter.Contains(key)) return null;
 
             var value = this.Find(key);
             if (value == null) return null;

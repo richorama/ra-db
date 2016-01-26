@@ -15,3 +15,21 @@ with search nearest b-tree index
 	compacted
 	get time 54ms
 	search time 50ms
+
+use protobuf
+	insert time 3941ms
+	compacted
+	get time 38ms
+	search time 51ms
+
+disable bloom filters
+	insert time 4131ms
+	compacted
+	get time 40ms
+	search time 53ms
+
+complete refactor
+	insert time 4052ms
+	compacted
+	get time 49ms
+	search time 52ms

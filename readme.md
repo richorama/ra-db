@@ -6,25 +6,34 @@ __DO NOT USE__
 
 ## Usage
 
+If you must use this database, you can do so like this:
+
 ```c#
+// declare a poco class
+
+public class MyValues
+{
+	public string StringValue { get; set; }
+}
+
 
 using (var db = new Database<string>("."))
 {
 	// write values
-	db.Set("key1", "value1");
-	db.Set("key2", "value2");
+	db.Set("key1", new MyValues { StringValue = "value1" });
+	db.Set("key2", new MyValues { StringValue = "value2" });
 
 	// get values
-	db.Get("key2"); // "value2"
+	db.Get("key2"); // { StringValue = "value2" }
 
 	// delete values
 	db.Del("key1");
 
 	// search within a key range
-	var results = db.Search("from_this_key", "to_this_key");
+	var results = db.Between("from_this_key", "to_this_key");
 	foreach (var item in results)
 	{
-		Console.WriteLine($"{item.Key} = {item.Value}");
+		Console.WriteLine($"{item.Key} = {item.Value.StringValue}");
 	}
 }
 
@@ -35,7 +44,9 @@ using (var db = new Database<string>("."))
 * Think about isolation during search and compaction
 * Perf perf perf
 * Implement a cache on the levels (perhaps after the bloom filter?)
-* Look at an alternative binary serializer
+* ~~Add an index~~
+* Add secondary indexes
+* ~~Look at an alternative binary serializer~~
 * Run distributed with raft
 * Add an HTTP API
 * ~~Support batching~~

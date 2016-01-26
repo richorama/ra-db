@@ -19,20 +19,23 @@ namespace RaDb
         ConcurrentDictionary<string, T> cache = new ConcurrentDictionary<string, T>();
         public event LogEntryHandler<T> LogEvent;
         HashSet<string> deletedKeys = new HashSet<string>();
+        ISerializer<T> serializer;
 
-        public Log(string filename)
+        public Log(string filename, ISerializer<T> serializer)
         {
             if (null == filename) throw new ArgumentNullException(nameof(filename));
 
             this.logStream = new FileStream(filename, FileMode.OpenOrCreate);
+            this.serializer = serializer;
             LoadCache();
         }
 
-        public Log(Stream stream)
+        public Log(Stream stream, ISerializer<T> serializer)
         {
             if (null == stream) throw new ArgumentNullException(nameof(stream));
 
             this.logStream = stream;
+            this.serializer = serializer;
             LoadCache();
         }
 
@@ -47,7 +50,7 @@ namespace RaDb
 
         void LoadCache()
         {
-            foreach (var entry in this.logStream.ReadAll<T>())
+            foreach (var entry in this.logStream.ReadAll<T>(serializer))
             {
                 ApplyToCache(entry);
             }
@@ -167,7 +170,7 @@ namespace RaDb
 
         public void Append(LogEntry<T> entry, bool requireFlush)
         {
-            var buffer = entry.GetBuffer();
+            var buffer = entry.GetBuffer(serializer);
             try
             {
                 Monitor.Enter(logStream);
@@ -182,7 +185,7 @@ namespace RaDb
 
         public void Append(IEnumerable<LogEntry<T>> entries, bool requireFlush)
         {
-            var buffer = entries.GetBuffer();
+            var buffer = entries.GetBuffer(serializer);
             try
             {
                 Monitor.Enter(logStream);
