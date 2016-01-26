@@ -1,0 +1,13 @@
+﻿RESET BASELINE
+	insert time 4196ms
+	get time 126ms
+	compacted
+	get time 4959ms
+	search time 6671ms
+
+Add a cache!
+	insert time 4313ms
+	get time 134ms
+	compacted
+	get time 165ms
+	search time 7236ms

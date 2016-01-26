@@ -1,8 +1,11 @@
-﻿using RaDb.Index;
+﻿using Caching;
+using RaDb.Index;
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
+using System.Runtime.Caching;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -21,6 +24,7 @@ namespace RaDb
         //BloomFilter<string> filter;
         IBTree<string, long> index;
         ISerializer<T> serializer;
+        LRUCache<string, DeletableValue<T>> cache;
 
         public string Filename { get; private set; }
 
@@ -31,6 +35,7 @@ namespace RaDb
             this.serializer = serializer;
             this.levelStream = new FileStream(filename, FileMode.OpenOrCreate);
             this.index = index ?? new BTree<string, long>();
+            this.cache = new LRUCache<string, DeletableValue<T>>(1000);
             InitIndex();
         }
 
@@ -41,6 +46,7 @@ namespace RaDb
             this.serializer = serializer;
             this.levelStream = stream;
             this.index = index ?? new BTree<string, long>();
+            this.cache = new LRUCache<string, DeletableValue<T>>(1000);
             InitIndex();
         }
 
@@ -212,15 +218,22 @@ namespace RaDb
             }
             return null;
         }
-      
+
         public DeletableValue<T> GetValueOrDeleted(string key)
         {
             //if (!this.filter.Contains(key)) return null;
+            DeletableValue<T> cachedValue = null;
+
+            if (this.cache.TryGetValue(key, out cachedValue)) return cachedValue; // cache hit
 
             var value = this.Find(key);
             if (value == null) return null;
             if (value.Operation == Operation.Delete) return DeletableValue<T>.FromDelete();
-            return DeletableValue<T>.FromValue(value.Value);
+            var resultFromDisk = DeletableValue<T>.FromValue(value.Value);
+
+            this.cache.TryAdd(key, resultFromDisk);
+
+            return resultFromDisk;
         }
 
         public void Dispose()

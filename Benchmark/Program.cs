@@ -16,8 +16,6 @@ namespace Benchmark
 
     class Program
     {
-
-
         static void Main(string[] args)
         {
             var rand = new Random();
@@ -28,7 +26,7 @@ namespace Benchmark
                 for (var i = 0; i < 300000; i++)
                 {
                     var key = rand.Next(1, 1000).ToString();
-                     // var value = db.Get(key);
+                    // var value = db.Get(key);
                     var value = 0;
                     value++;
                     db.Set(key, new TestValue { Value = value });
@@ -37,21 +35,15 @@ namespace Benchmark
                 Console.WriteLine($"insert time {timer.ElapsedMilliseconds}ms");
                 timer.Reset();
 
+                Gets(rand, db, timer);
+
                 db.LevelUp(true);
                 Console.WriteLine("compacted");
 
-                timer.Start();
-                for (var i = 0; i < 2000; i++)
-                {
-                    var key = rand.Next(1, 1000).ToString();
-                    var value = db.Get(key);
-                }
-                timer.Stop();
-                Console.WriteLine($"get time {timer.ElapsedMilliseconds}ms");
-                timer.Reset();
+                Gets(rand, db, timer);
 
                 timer.Start();
-                for (var i = 0; i < 2000; i++)
+                for (var i = 0; i < 300000; i++)
                 {
                     var key = rand.Next();
                     db.Between(key.ToString(), (key + 10).ToString()).ToArray();
@@ -61,6 +53,19 @@ namespace Benchmark
                 timer.Reset();
             }
             Console.ReadKey();
+        }
+
+        private static void Gets(Random rand, Database<TestValue> db, Stopwatch timer)
+        {
+            timer.Start();
+            for (var i = 0; i < 300000; i++)
+            {
+                var key = rand.Next(1, 1000).ToString();
+                var value = db.Get(key);
+            }
+            timer.Stop();
+            Console.WriteLine($"get time {timer.ElapsedMilliseconds}ms");
+            timer.Reset();
         }
     }
 }
