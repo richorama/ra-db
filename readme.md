@@ -11,17 +11,17 @@ If you must use this database, you can do so like this:
 ```c#
 // declare a poco class
 
-public class MyValues
+public class MyValue
 {
 	public string StringValue { get; set; }
 }
 
 
-using (var db = new Database<string>("."))
+using (var db = new Database<MyValue>("."))
 {
 	// write values
-	db.Set("key1", new MyValues { StringValue = "value1" });
-	db.Set("key2", new MyValues { StringValue = "value2" });
+	db.Set("key1", new MyValue { StringValue = "value1" });
+	db.Set("key2", new MyValue { StringValue = "value2" });
 
 	// get values
 	db.Get("key2"); // { StringValue = "value2" }
