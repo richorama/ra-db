@@ -1,13 +1,65 @@
 ﻿RESET BASELINE
-	insert time 4196ms
-	get time 126ms
-	compacted
-	get time 4959ms
-	search time 6671ms
+	insert time 3135ms
+	get time 77ms
+	get time 129ms
+	search time 5039ms
 
-Add a cache!
-	insert time 4313ms
-	get time 134ms
+Reuse the buffers
+	insert time 3265ms
+	get time 88ms
+	get time 120ms
+	search time 5196ms
+
+	insert time 3139ms
+	get time 82ms
+	get time 122ms
+	search time 5020ms
+
+
+recyclable memory stream
+	insert time 3705ms
+	get time 81ms
 	compacted
-	get time 165ms
-	search time 7236ms
+	get time 120ms
+	search time 4812ms
+
+pool the serialize buffer
+	insert time 3216ms
+	get time 86ms
+	compacted
+	get time 119ms
+	search time 5059ms
+
+pool the memorysteam 
+	insert time 3017ms
+	get time 80ms
+	compacted
+	get time 120ms
+	search time 5098ms
+
+	insert time 3004ms
+	get time 86ms
+	compacted
+	get time 118ms
+	search time 5154ms
+
+FIX keys buffer
+	insert time 3402ms
+	get time 92ms
+	compacted
+	get time 130ms
+	search time 5428ms
+
+ WE ARE NOT THREAD SAFE
+	insert time 3965ms
+	get time 111ms
+	compacted
+	get time 153ms
+	search time 6503ms
+
+THREAD SAFE BACK ON
+	insert time 3964ms
+	get time 112ms
+	compacted
+	get time 151ms
+	search time 6416ms

@@ -9,7 +9,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RaDbTests", "RaDbTests\RaDb
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Benchmark", "Benchmark\Benchmark.csproj", "{8AE87D15-8654-4E5E-8B8B-5F919A15C1B8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RaDb.Http", "RaDb.Http\RaDb.Http.csproj", "{9C47B3B6-C4CD-4140-BFD0-259896C2AEE8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Saturation", "Saturation\Saturation.csproj", "{F63A66F5-21B7-4052-9B24-6D74F07CD0DF}"
+EndProject
 Global
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
@@ -27,6 +34,14 @@ Global
 		{8AE87D15-8654-4E5E-8B8B-5F919A15C1B8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8AE87D15-8654-4E5E-8B8B-5F919A15C1B8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8AE87D15-8654-4E5E-8B8B-5F919A15C1B8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9C47B3B6-C4CD-4140-BFD0-259896C2AEE8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9C47B3B6-C4CD-4140-BFD0-259896C2AEE8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9C47B3B6-C4CD-4140-BFD0-259896C2AEE8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9C47B3B6-C4CD-4140-BFD0-259896C2AEE8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F63A66F5-21B7-4052-9B24-6D74F07CD0DF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F63A66F5-21B7-4052-9B24-6D74F07CD0DF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F63A66F5-21B7-4052-9B24-6D74F07CD0DF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F63A66F5-21B7-4052-9B24-6D74F07CD0DF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

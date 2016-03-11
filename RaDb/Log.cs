@@ -170,11 +170,12 @@ namespace RaDb
 
         public void Append(LogEntry<T> entry, bool requireFlush)
         {
-            var buffer = entry.GetBuffer(serializer);
+            long length;
+            var buffer = entry.GetBuffer(serializer, out length);
             try
             {
                 Monitor.Enter(logStream);
-                logStream.Write(buffer, 0, buffer.Length);
+                logStream.Write(buffer, 0, (int) length);
                 if (requireFlush) logStream.Flush();
             }
             finally
@@ -183,6 +184,7 @@ namespace RaDb
             }
         }
 
+        
         public void Append(IEnumerable<LogEntry<T>> entries, bool requireFlush)
         {
             var buffer = entries.GetBuffer(serializer);
@@ -194,7 +196,7 @@ namespace RaDb
             }
             finally
             {
-                Monitor.Exit(logStream);
+              Monitor.Exit(logStream);
             }
         }
 

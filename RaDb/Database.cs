@@ -11,7 +11,7 @@ namespace RaDb
     public class Database<T> : IDisposable
     {
         const int MAX_LOG_SIZE = 4 * 1024 * 1024; // 4MB
-        const int MAX_LEVELS = 4;
+        const int MAX_LEVELS = 10;
 
         public DirectoryInfo DbDirectory { get; private set; }
 
@@ -132,24 +132,27 @@ namespace RaDb
 
                 if (this.Levels.Count > MAX_LEVELS)
                 {
-                    // we've hit the max numer of levels, so consolidate down to a single level
-                    // compactions are extremely experimental!!!
-                    var compactedFilename = this.NextLevelName();
-                    var newLevel = Level<T>.Compaction(this.Levels, compactedFilename, Serializer);
-                    var oldLevels = this.Levels.ToArray();
-                    this.Levels.Clear();
-                    this.Levels.Add(newLevel);
-                    foreach (var oldLevel in oldLevels)
-                    {
-                        oldLevel.Dispose();
-                        File.Delete(oldLevel.Filename);
-                    }
+                    Compact();
                 }
 
             }
             finally
             {
                 Monitor.Exit(this.ActiveLog);
+            }
+        }
+
+        public void Compact()
+        {
+            var compactedFilename = this.NextLevelName();
+            var newLevel = Level<T>.Compaction(this.Levels, compactedFilename, Serializer);
+            var oldLevels = this.Levels.ToArray();
+            this.Levels.Clear();
+            this.Levels.Add(newLevel);
+            foreach (var oldLevel in oldLevels)
+            {
+                oldLevel.Dispose();
+                File.Delete(oldLevel.Filename);
             }
         }
 

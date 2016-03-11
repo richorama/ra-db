@@ -1,10 +1,6 @@
 ﻿using ProtoBuf.Meta;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace RaDb
 {
@@ -20,18 +16,33 @@ namespace RaDb
 
         byte[] emptyBuffer = new byte[0];
 
-        public byte[] Serialize(T value)
-        {
-            if (null == value) return emptyBuffer; 
+        byte[] buffer = new byte[4 * 1024];
+        MemoryStream stream = new MemoryStream(4 * 1024);
 
-            using (var memoryStream = new MemoryStream())
+        public byte[] Serialize(T value, out int length)
+        {
+            if (null == value)
             {
-                meta.Serialize(memoryStream, value);
-                memoryStream.Position = 0;
-                var buffer = new byte[memoryStream.Length];
-                memoryStream.Read(buffer, 0, buffer.Length);
-                return buffer;
+                length = 0;
+                return emptyBuffer;
             }
+
+            stream.Position = 0;
+            stream.SetLength(0);
+
+            meta.Serialize(stream, value);
+
+            length = (int)stream.Length;
+            stream.Position = 0;
+
+            if (length > buffer.Length)
+            {
+                // grow the buffer
+                buffer = new byte[length];
+            }
+
+            stream.Read(buffer, 0, length);
+            return buffer;
         }
 
         public T Deserialize(Stream stream, int length)

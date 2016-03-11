@@ -2,12 +2,8 @@
 using RaDb.Index;
 using System;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
-using System.Runtime.Caching;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace RaDb
 {
@@ -63,18 +59,22 @@ namespace RaDb
 
         public static Level<T> Build(Log<T> log, string filename, ISerializer<T> serializer)
         {
+            Console.WriteLine($"building level {filename}");
             var stream = new FileStream(filename, FileMode.OpenOrCreate);
             stream.Position = 0;
             foreach (var logEntry in StreamLogEntry(log).OrderBy(x => x.Key))
             {
-                var buffer = logEntry.GetBuffer(serializer);
-                stream.Write(buffer, 0, buffer.Length);
+                long length;
+                var buffer = logEntry.GetBuffer(serializer, out length);
+                stream.Write(buffer, 0, (int) length);
             }
+            Console.WriteLine($"stream length {stream.Length}");
             return new Level<T>(stream, filename, serializer);
         }
 
         public static Level<T> Compaction(IEnumerable<Level<T>> levels, string filename, ISerializer<T> serializer)
         {
+            Console.WriteLine("compaction");
             var dictionary = new Dictionary<string, T>();
 
             foreach (var level in levels)
@@ -84,14 +84,17 @@ namespace RaDb
                     dictionary.ApplyOperation(item);
                 }
             }
+            Console.WriteLine($"key count {dictionary.Keys.Count}");
 
             var stream = new FileStream(filename, FileMode.OpenOrCreate);
             stream.Position = 0;
             foreach (var item in dictionary.OrderBy(x => x.Key).Select(x => LogEntry<T>.CreateWrite(x.Key, x.Value)))
             {
-                var buffer = item.GetBuffer(serializer);
-                stream.Write(buffer, 0, buffer.Length);
+                long length;
+                var buffer = item.GetBuffer(serializer, out length);
+                stream.Write(buffer, 0, (int) length);
             }
+            Console.WriteLine($"stream size {stream.Length}");
             return new Level<T>(stream, filename, serializer);
 
         }

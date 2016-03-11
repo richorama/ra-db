@@ -52,7 +52,7 @@ namespace Benchmark
                 Console.WriteLine($"search time {timer.ElapsedMilliseconds}ms");
                 timer.Reset();
             }
-            Console.ReadKey();
+            Console.WriteLine("done");
         }
 
         private static void Gets(Random rand, Database<TestValue> db, Stopwatch timer)

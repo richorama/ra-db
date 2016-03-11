@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 
@@ -18,44 +20,56 @@ namespace RaDb
             return Encoding.Default.GetBytes(str);
         }
 
-        public static string GetString(this byte[] bytes)
+        public static string GetString(this byte[] bytes, int length)
         {
-            return Encoding.Default.GetString(bytes);
+            return Encoding.Default.GetString(bytes, 0, length);
         }
+
+        static byte[] intBuffer = new byte[sizeof(int)];
 
         public static int ReadInt(this Stream stream)
         {
-            var buffer = new byte[sizeof(int)];
-            stream.Read(buffer, 0, sizeof(int));
-            return BitConverter.ToInt32(buffer,0);
+            stream.Read(intBuffer, 0, intBuffer.Length);
+            return BitConverter.ToInt32(intBuffer, 0);
         }
+
+        static byte[] buffer = new byte[4 * 1024];
 
         public static string ReadString(this Stream stream, int length)
         {
-            var buffer = new byte[length];
+            // grow the buffer
+            if (length > buffer.Length) buffer = new byte[length];
             stream.Read(buffer, 0, length);
-            return buffer.GetString();
+            return buffer.GetString(length);
         }
 
-        public static byte[] GetBuffer<T>(this LogEntry<T> entry, ISerializer<T> serializer)
+        static byte[] tempBuffer = new byte[4 * 1024];
+
+        public static byte[] GetBuffer<T>(this LogEntry<T> entry, ISerializer<T> serializer, out long bufferLength)
         {
             var keyBuffer = entry.Key.GetBytes();
-            var valueBuffer = serializer.Serialize(entry.Value);
+            int valueLength;
+            var valueBuffer = serializer.Serialize(entry.Value, out valueLength);
 
-            var buffer = new byte[keyBuffer.Length + valueBuffer.Length + 4 + 4 + 1];
+            bufferLength = keyBuffer.Length + valueLength + 4 + 4 + 1;
+
+            // grow the buffer
+            if (bufferLength > tempBuffer.Length) tempBuffer = new byte[bufferLength];
+
             var index = 0;
-            var append = new Action<byte[]>(bytes =>
+            var append = new Action<byte[],int>((bytes, length) =>
             {
-                Buffer.BlockCopy(bytes, 0, buffer, index, bytes.Length);
-                index += bytes.Length;
+                if (length == -1) length = bytes.Length;
+                Buffer.BlockCopy(bytes, 0, tempBuffer, index, length);
+                index += length;
             });
 
-            append(BitConverter.GetBytes(keyBuffer.Length));
-            append(BitConverter.GetBytes(valueBuffer.Length));
-            append(new byte[] { (byte)entry.Operation });
-            append(keyBuffer);
-            append(valueBuffer);
-            return buffer;
+            append(BitConverter.GetBytes(keyBuffer.Length), -1);
+            append(BitConverter.GetBytes(valueLength), -1);
+            append(new byte[] { (byte)entry.Operation }, -1);
+            append(keyBuffer, -1);
+            append(valueBuffer, valueLength);
+            return tempBuffer;
         }
 
         public static byte[] GetBuffer<T>(this IEnumerable<LogEntry<T>> entries, ISerializer<T> serializer)
@@ -63,7 +77,9 @@ namespace RaDb
             var output = new List<byte>();
             foreach (var entry in entries)
             {
-                output.AddRange(entry.GetBuffer(serializer));
+                long length;
+                var buffer = entry.GetBuffer(serializer, out length);
+                output.AddRange(buffer.Take((int)length));
             }
             return output.ToArray();
         }
