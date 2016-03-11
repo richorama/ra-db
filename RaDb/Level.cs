@@ -48,11 +48,8 @@ namespace RaDb
 
         void InitIndex()
         {
-            //filter = new BloomFilter<string>(10000); // work this out
-            
             foreach (var key in this.StreamAllKeys())
             {
-                //filter.Add(key.Item1);
                 index.Insert(key.Item1, key.Item2);
             }
         }
